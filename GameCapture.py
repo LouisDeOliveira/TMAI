@@ -1,46 +1,66 @@
-from pickletools import read_uint1
-from xml.dom.minidom import Element
 import numpy as np
 import cv2
 from mss import mss
-from collections import deque
-bounding_box = {'top': 40, 'left': 0, 'width': 400, 'height': 304}
+import os
+import win32.win32gui as wind32
+from PIL import ImageGrab
 
-sct = mss()
 
-def process_screen(screenshot):
-    baw = cv2.cvtColor(screenshot, cv2.COLOR_BGR2GRAY)
-    baw = cv2.Canny(baw, threshold1=100, threshold2=300)
-    element = cv2.getStructuringElement(shape=cv2.MORPH_RECT, ksize=(3, 3))
-    
-    baw = cv2.dilate(baw, element, iterations=3)
-    baw = cv2.GaussianBlur(baw, (3, 3), 0)
 
-    
-    return baw
+def getWindowGeometry(name:str)->tuple:
+    """
+    Get the geometry of a window.
+    """
+    hwnd = wind32.FindWindow(None, name)
+    left, top, right, bottom = wind32.GetWindowRect(hwnd)
+ 
+    return  left+10, top+40, right-10, bottom-10
 
-def ROICrop(screenshot, x, y, w, h):
-    return screenshot[y:y+h, x:x+w]
+TEST = "TrackMania Nations Forever (TMInterface 1.1.1)"
 
-stacked = deque([np.zeros((204,400)),np.zeros((204,400)),np.zeros((204,400))], maxlen=5)
-while True:
-    sct_img = np.array(sct.grab(bounding_box))
-    cut_img = ROICrop(sct_img, 0, 100, 400, 304)
-    processed_img = process_screen(cut_img)
-    
-    # stacked.append(processed_img)
-    # stacked_img = cv2.threshold((np.sum([img for img in stacked], axis=0)/3).astype(np.uint8),0,255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
 
-    cv2.imshow('screen', sct_img)
-    cv2.imshow('cut', cut_img)
-    cv2.imshow('processed', processed_img)
-    cv2.imshow('stacked', stacked_img)
-    cv2.imwrite('./screenshot.png', sct_img)
+LEFT, TOP, WIDTH, HEIGHT = getWindowGeometry(TEST)
+print(TOP, LEFT, WIDTH, HEIGHT)
 
-    if (cv2.waitKey(1) & 0xFF) == ord('q'):
-        cv2.destroyAllWindows(sct_img)
+class GameViewer:
+    def __init__(self) -> None:
         
-        break
+        self.sct = mss()
+
+    def process_screen(screenshot):
+        baw = cv2.cvtColor(screenshot, cv2.COLOR_BGR2GRAY)
+        baw = cv2.Canny(baw, threshold1=100, threshold2=300)
+        element = cv2.getStructuringElement(shape=cv2.MORPH_RECT, ksize=(3, 3))
+        
+        baw = cv2.dilate(baw, element, iterations=3)
+        baw = cv2.GaussianBlur(baw, (3, 3), 0)
+
+        
+        return baw
+
+    def ROICrop(screenshot, x, y, w, h):
+        return screenshot[y:y+h, x:x+w]
+
+    def capture_and_save(self, save_path = "./images"):
+        it = 0
+        while True:
+            self.bounding_box = getWindowGeometry(TEST)
+            it+=1
+            sct_img = cv2.cvtColor(np.array(self.sct.grab(self.bounding_box)), cv2.COLOR_RGBA2RGB)
+            cv2.imshow('screen', sct_img)
+           
+            if it%100 == 0:
+                print(it)
+                path = os.path.join(save_path, "screen_" + str(it) + ".jpg")
+                cv2.imwrite(path, sct_img)
+                print("saved")
+
+            if (cv2.waitKey(1) & 0xFF) == ord('q'):
+                cv2.destroyAllWindows(sct_img)
+                
+                break
 
     
-
+if __name__ == "__main__":
+    viewer = GameViewer()
+    viewer.capture_and_save()
