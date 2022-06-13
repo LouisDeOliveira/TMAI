@@ -6,7 +6,7 @@ from tminterface.client import run_client
 
 class Myclient(Client):
     def on_registered(self, iface):
-        print("Registered to TMInterface")&
+        print("Registered to TMInterface")
     def on_simulation_step(self, iface, _time: int):
         print(f"Simulation step, time = {_time}")
     def on_run_step(self, iface, _time: int):
