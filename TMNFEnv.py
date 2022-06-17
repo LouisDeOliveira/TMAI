@@ -1,3 +1,5 @@
+from collections import deque
+from dataclasses import dataclass
 from pytest import importorskip
 import torch
 import torch.nn as nn
@@ -18,7 +20,7 @@ class TMNFEnv(gym.Env):
     def __init__(self, agent:"Agent"):
         self.action_space = gym.spaces.Box(low = -1.0, high = 1.0, shape = (2,), dtype = np.float32)
         self.observation_space = gym.spaces.Box(low=0, high=255, shape=(128,128,3), dtype=np.uint8)
-        self.action_freq = 50
+        self.action_freq = 100
         self.TMNFClient = TMNFClient(action_freq=self.action_freq, env = self, agent=agent)
         self.Viewer = GameViewer()
         self.to_render = False
@@ -35,7 +37,7 @@ class TMNFEnv(gym.Env):
 
 
     def reset(self) -> ObsType:
-        self.TMNFClient.iface.execute_command("load_state test_track.bin")
+        self.TMNFClient.iface.execute_command("press delete")
         self.TMNFClient.total_reward = 0.
         self.TMNFClient.current_commands = []
         return self.Viewer.get_frame()
@@ -48,8 +50,8 @@ class TMNFEnv(gym.Env):
 
 
     def _action_to_command(self, action: ActType) -> List[str]:
-        gas = -20000
-        steer = np.sign(action[1])*(max(abs(action[1]*65536), 20000))
+        gas = np.clip(np.sign(action[0])*(np.abs(action[0])*65536+20000), -65536, 65536)
+        steer = np.clip(np.sign(action[1])*(np.abs(action[1])*65536+20000), -65536, 65536)
         gas_act:str = "gas " + str(gas)
         steer_act:str = "steer " + str(steer)
         return [gas_act, steer_act]
@@ -58,20 +60,21 @@ class TMNFEnv(gym.Env):
         run_client(self.TMNFClient)
 
 class TMNFClient(Client):
-    def __init__(self, action_freq = 50, verbose = True, env:TMNFEnv = None, agent:"Agent" = None):
+    def __init__(self, action_freq = 100, verbose = True, env:TMNFEnv = None, policy:"Agent" = None, value:"Policy" = None):
         super().__init__()
         self.verbose = verbose
         self.current_commands:List[str] = []
         self.action_freq = action_freq
         self.env = env
         self.obs = np.zeros((128,128,3))
-        self.agent = agent
+        self.policy = policy
+        self.value = value
         self.total_reward = 0.0
 
     def on_registered(self, iface):
         if self.verbose:
             print("Client is registered on TMInterface")
-        iface.execute_command("load_state test_track.bin")
+        iface.execute_command("press delete")
         self.iface = iface
         self.obs = env.reset()
     
@@ -82,11 +85,14 @@ class TMNFClient(Client):
     
     def on_run_step(self, iface, _time: int):
         self.iface = iface
+        if (_time < 300):
+            return
         if _time%self.action_freq == 0:
-            self.obs, reward, done, _ = self.env.step(self.agent.act(self.obs))
+            self.obs, reward, done, _ = self.env.step(self.policy.act(self.obs))
             self.total_reward += self._reward(iface)
             print(self.total_reward)
-    
+            if done:
+                self.env.reset()
            
         for cmd in self.current_commands:
             iface.execute_command(cmd)
@@ -131,6 +137,7 @@ class Agent(nn.Module):
         return x
 
     def act(self, x):
+
         x = ToTensor()(x).unsqueeze(0).float()
         x = torch.Tensor(x)
         x = self.forward(x)
@@ -138,14 +145,67 @@ class Agent(nn.Module):
 
         return x
 
-class Episode:
-    def __init__(self) -> None:
-        self.total_reward = 0.0
-        self.actions = []
-        self.states = []
-        self.rewards = []
-        self.next_states = []
+class Policy(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.conv1 = nn.Conv2d(3, 16, kernel_size=3, padding="same")
+        self.conv2 = nn.Conv2d(16, 32, kernel_size=3, padding="same")
+        self.conv4 = nn.Conv2d(32, 1, kernel_size=1, padding="same")
+        self.avgpool = nn.AvgPool2d(kernel_size=2)
+
+
+        self.fc1 = nn.Linear(1024, 128)
+        self.fc2 = nn.Linear(128, 1)
+
+        self.maxpool = nn.MaxPool2d(2, 2)
+
+    def forward(self, x):
+        x = self.maxpool(F.relu(self.conv1(x)))
+        x = self.maxpool(F.relu(self.conv2(x)))
+        x = F.relu(self.conv4(x))
+        x = x.view(-1, 1024)
+        x = F.relu(self.fc1(x))
+        x = self.fc2(x)
+        return x
+
+    def act(self, x):
+
+        x = ToTensor()(x).unsqueeze(0).float()
+        x = torch.Tensor(x)
+        x = self.forward(x)
+        x = x.squeeze(0).detach().numpy()
+
+        return x
+
+class Buffer:
+    def __init__(self, capacity=1e3):
+        self.capacity = capacity
+        self.memory = deque([], maxlen=capacity)
+
+    def append(self, *args):
+        transition = Transition(*args)
+        self.memory.append(transition)
+
+    def sample(self, batch_size):
+        return np.random.sample(self.memory, batch_size)
+
+    def reset(self):
+        self.memory.clear()
+
+    def __len__(self):
+        return len(self.memory)
+
+        
+@dataclass
+class Transition:
+    state: np.ndarray
+    action: np.ndarray
+    next_state: np.ndarray
+    reward: float
+
 if __name__ == "__main__":
     env = TMNFEnv(Agent())
     env.run_simulation()
+
+    trans = Transition()
 
