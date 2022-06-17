@@ -48,8 +48,10 @@ class TMNFEnv(gym.Env):
 
 
     def _action_to_command(self, action: ActType) -> List[str]:
-        gas_act:str = "gas " + str(action[0]*65536)
-        steer_act:str = "steer " + str(action[1]*65536)
+        gas = -20000
+        steer = np.sign(action[1])*(max(abs(action[1]*65536), 20000))
+        gas_act:str = "gas " + str(gas)
+        steer_act:str = "steer " + str(steer)
         return [gas_act, steer_act]
 
     def run_simulation(self):
@@ -135,6 +137,14 @@ class Agent(nn.Module):
         x = x.squeeze(0).detach().numpy()
 
         return x
+
+class Episode:
+    def __init__(self) -> None:
+        self.total_reward = 0.0
+        self.actions = []
+        self.states = []
+        self.rewards = []
+        self.next_states = []
 if __name__ == "__main__":
     env = TMNFEnv(Agent())
     env.run_simulation()
