@@ -40,12 +40,18 @@ class GameViewer:
     def ROICrop(self, screenshot, x, y, w, h):
         return screenshot[y:y+h, x:x+w]
 
-    def capture_and_save(self, save_path = "./images", save = True):
+    def capture_and_save(self, save_path = "./images", save = False):
         it = 0
         while True:
             self.bounding_box = getWindowGeometry(TEST)
             it+=1
-            sct_img = cv2.cvtColor(np.array(self.sct.grab(self.bounding_box)), cv2.COLOR_RGBA2RGB)
+            sct_img = np.array(
+                cv2.resize(
+                    cv2.cvtColor(
+                        np.array(self.sct.grab(self.bounding_box)),
+                        cv2.COLOR_RGBA2RGB),
+                    (128,128))
+            )
             processed = self.process_screen(sct_img)
             cv2.imshow('screen', sct_img)
             cv2.imshow('processed', processed)
@@ -61,7 +67,12 @@ class GameViewer:
                 
                 break
 
-    
+    def get_frame(self,):
+        self.bounding_box = getWindowGeometry(TEST)
+        sct_img = cv2.resize(cv2.cvtColor(np.array(self.sct.grab(self.bounding_box)), cv2.COLOR_RGBA2RGB), (128,128))
+
+        return sct_img
+
 if __name__ == "__main__":
     viewer = GameViewer()
     viewer.capture_and_save(save=False)
