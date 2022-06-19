@@ -70,8 +70,8 @@ class GameViewer:
     def get_frame(self,):
         self.bounding_box = getWindowGeometry(TEST)
         sct_img = cv2.resize(cv2.cvtColor(np.array(self.sct.grab(self.bounding_box)), cv2.COLOR_RGBA2RGB), (128,128))
-
-        return sct_img
+        res = np.array(sct_img)
+        return res
 
 if __name__ == "__main__":
     viewer = GameViewer()
