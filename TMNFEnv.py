@@ -28,23 +28,28 @@ class TMNFEnv(gym.Env):
         self.TMNFClient = TMNFClient(action_freq=self.action_freq, env = self, policy=agent, value=value)
         self.Viewer = GameViewer()
         self.to_render = False
+        self.max_time = 30000
+
 
 
     def step(self, action: ActType) -> Tuple[np.ndarray, float, bool, dict]:
         command = self._action_to_command(action)
         self.TMNFClient.update_commands(command)
         reward  = self.TMNFClient.reward()
-        done = True if self.TMNFClient.total_reward < -30. else False
+        done = True if self.TMNFClient.time > self.max_time  or self.TMNFClient.total_reward<-100  else False
         info = {}
 
         return self.Viewer.get_frame(), reward, done, info
 
 
     def reset(self) -> ObsType:
-        self.TMNFClient.iface.execute_command("press delete")
+        
         self.TMNFClient.total_reward = 0.
         self.TMNFClient.current_commands = []
         self.TMNFClient.episodes_counter += 1
+        self.TMNFClient.iface.execute_command("press delete")
+        # if not self.TMNFClient.iface.registered:
+        #     self.run_simulation()
         return self.Viewer.get_frame()
 
         
@@ -62,7 +67,7 @@ class TMNFEnv(gym.Env):
 
     def _action_rescale(self, action: ActType) -> Tuple[float, float]:
         action += self.TMNFClient.noise.sample()
-        print(f"raw_gas = {action[0]}, raw_steer = {action[1]}")
+        # print(f"raw_gas = {action[0]}, raw_steer = {action[1]}")
 
         gas = action[0]-1
         gas = np.clip(gas*65536, -65536, -20000)
@@ -83,6 +88,7 @@ class TMNFClient(Client):
         self.current_commands:List[str] = []
         self.action_freq = action_freq
         self.train_freq = 5
+        self.time = 0
         self.env = env
         self.obs = np.zeros((128,128,3))
         self.policy = policy
@@ -93,25 +99,32 @@ class TMNFClient(Client):
         self.noise = OUActionNoise(size = 2)
         self.transition_buffer = Buffer[Transition]()
         self.batch_size = 32
-        self.episodes_counter = 0    
+        self.episodes_counter = 0  
+        self.iface = None  
 
     def on_registered(self, iface):
         if self.verbose:
             print("Client is registered on TMInterface")
         iface.execute_command("press delete")
-        self.iface = iface
+        if self.iface is None:
+            self.iface = iface
+        self.iface.set_timeout(-1)
         self.obs = env.reset()
     
     def on_simulation_step(self, iface, _time: int):
-        self.iface = iface
+        if self.iface is None:
+            self.iface = iface
         if self.verbose:
             print(f"Simulation step, time = {_time}")
     
     def on_run_step(self, iface, _time: int):
-        self.iface = iface
-        if (_time < 300):
+        # print(f"run_step {_time}")
+        if self.iface is None:
+            self.iface = iface
+        self.time = _time
+        if (self.time < 300):
             return
-        if _time%self.action_freq == 0:
+        if self.time%self.action_freq == 0:
             action = self.policy.act(self.obs)
             old_obs = np.array(self.obs.copy())
             self.obs, reward, done, _ = self.env.step(action)
@@ -119,6 +132,7 @@ class TMNFClient(Client):
             
             if done:
                 print(self.total_reward)
+                self.time = 0
                 self.train_step()
                 self.env.reset()
                 
@@ -134,7 +148,8 @@ class TMNFClient(Client):
         self.current_commands = new_commands
 
     def _reward(self, iface):
-        speed_reward = iface.get_simulation_state().display_speed/500
+        speed =  iface.get_simulation_state().display_speed
+        speed_reward = speed/200 if speed > 100 else 0
         roll_reward = - abs(iface.get_simulation_state().yaw_pitch_roll[2])/3.15
         constant_reward = -0.3
 
@@ -175,6 +190,7 @@ class TMNFClient(Client):
         self.policy.cpu()
         self.value.cpu()
         print("done")
+
 
 class Agent(nn.Module):
     def __init__(self):
