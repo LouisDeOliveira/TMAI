@@ -15,6 +15,7 @@ import random
 import cv2
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+GAMMA = 0.95
 
 ObsType = TypeVar("ObsType")
 ActType = TypeVar("ActType")
@@ -29,24 +30,26 @@ class TMNFEnv(gym.Env):
         self.Viewer = GameViewer()
         self.to_render = False
         self.max_time = 30000
+        self.n_steps = 0
 
 
 
     def step(self, action: ActType) -> Tuple[np.ndarray, float, bool, dict]:
+        self.n_steps += 1
+        # print(self.n_steps)
         command = self._action_to_command(action)
         self.TMNFClient.update_commands(command)
         reward  = self.TMNFClient.reward()
-        done = True if self.TMNFClient.time > self.max_time  or self.TMNFClient.total_reward<-100  else False
+        done = True if self.n_steps > 300 or self.TMNFClient.total_reward < -600  else False
         info = {}
 
         return self.Viewer.get_frame(), reward, done, info
 
 
     def reset(self) -> ObsType:
-        
+        self.n_steps = 0
         self.TMNFClient.total_reward = 0.
         self.TMNFClient.current_commands = []
-        self.TMNFClient.episodes_counter += 1
         self.TMNFClient.iface.execute_command("press delete")
         # if not self.TMNFClient.iface.registered:
         #     self.run_simulation()
@@ -73,7 +76,7 @@ class TMNFEnv(gym.Env):
         gas = np.clip(gas*65536, -65536, -20000)
 
         abs_steer = np.abs(action[1])
-        steer = np.sign(action[1])*(max(abs_steer*65536,20000))
+        steer = np.sign(action[1])*(min(abs_steer*65536, 30000))
 
         return gas, steer
 
@@ -88,7 +91,6 @@ class TMNFClient(Client):
         self.current_commands:List[str] = []
         self.action_freq = action_freq
         self.train_freq = 5
-        self.time = 0
         self.env = env
         self.obs = np.zeros((128,128,3))
         self.policy = policy
@@ -98,7 +100,7 @@ class TMNFClient(Client):
         self.total_reward = 0.0
         self.noise = OUActionNoise(size = 2)
         self.transition_buffer = Buffer[Transition]()
-        self.batch_size = 32
+        self.batch_size = 128
         self.episodes_counter = 0  
         self.iface = None  
 
@@ -109,6 +111,7 @@ class TMNFClient(Client):
         if self.iface is None:
             self.iface = iface
         self.iface.set_timeout(-1)
+        self.iface.set_speed(1.5)
         self.obs = env.reset()
     
     def on_simulation_step(self, iface, _time: int):
@@ -121,20 +124,21 @@ class TMNFClient(Client):
         # print(f"run_step {_time}")
         if self.iface is None:
             self.iface = iface
-        self.time = _time
-        if (self.time < 300):
+        if (_time < 300):
             return
-        if self.time%self.action_freq == 0:
+        if _time%self.action_freq == 0:
             action = self.policy.act(self.obs)
             old_obs = np.array(self.obs.copy())
             self.obs, reward, done, _ = self.env.step(action)
             self.total_reward += self._reward(iface)
-            
+
             if done:
                 print(self.total_reward)
-                self.time = 0
-                self.train_step()
+                self.episodes_counter += 1
                 self.env.reset()
+                if self.episodes_counter%self.train_freq == 0:
+                    self.train_step()
+                
                 
             else:
                 self.transition_buffer.append(old_obs, action, np.array(self.obs.copy()), reward)
@@ -150,6 +154,8 @@ class TMNFClient(Client):
     def _reward(self, iface):
         speed =  iface.get_simulation_state().display_speed
         speed_reward = speed/200 if speed > 100 else 0
+        if speed < 10:
+            speed_reward = -10
         roll_reward = - abs(iface.get_simulation_state().yaw_pitch_roll[2])/3.15
         constant_reward = -0.3
 
@@ -172,10 +178,10 @@ class TMNFClient(Client):
         q_value = self.value(states, actions)
         next_qvalue = self.value(next_states, self.policy(next_states))
         next_qvalue = torch.squeeze(next_qvalue)
-        target_qvalue = rewards + 0.99*next_qvalue
+        target_qvalue = rewards + GAMMA*next_qvalue
 
-        print(rewards.shape)
-        print(next_qvalue.shape)
+        # print(rewards.shape)
+        # print(next_qvalue.shape)
 
         value_loss = F.mse_loss(q_value, target_qvalue.unsqueeze(1))
         self.value_opt.zero_grad()
@@ -187,9 +193,10 @@ class TMNFClient(Client):
         policy_loss.backward()
         self.policy_opt.step()
 
+        print(value_loss.item(), policy_loss.item())
         self.policy.cpu()
         self.value.cpu()
-        print("done")
+        print("done training step")
 
 
 class Agent(nn.Module):
@@ -261,7 +268,7 @@ class Value(nn.Module):
         return z
 
 class Buffer(Generic[T]):
-    def __init__(self, capacity=1000):
+    def __init__(self, capacity=100000):
         self.capacity = capacity
         self.memory = deque([], maxlen=capacity)
 
@@ -280,7 +287,7 @@ class Buffer(Generic[T]):
 
 class OUActionNoise:
 
-    def __init__(self, theta=0.15, mu=0.0, sigma=0.2, dt=1e-2, x0=None, size=1, sigma_min=None, n_steps_annealing=1000):
+    def __init__(self, theta=0.3, mu=0.0, sigma=0.4, dt=1e-2, x0=None, size=1, sigma_min=None, n_steps_annealing=1000):
         self.theta = theta
         self.mu = mu
         self.sigma = sigma
