@@ -15,40 +15,26 @@ def getWindowGeometry(name: str) -> tuple:
     return left + 10, top + 40, right - 10, bottom - 10
 
 
-TEST = "TrackMania Nations Forever (TMInterface 1.1.1)"
-
-
-LEFT, TOP, WIDTH, HEIGHT = getWindowGeometry(TEST)
-print(TOP, LEFT, WIDTH, HEIGHT)
-
-
 class GameViewer:
     def __init__(self) -> None:
 
+        self.window_name = "TrackMania Nations Forever (TMInterface 1.1.1)"
         self.sct = mss()
 
-    def process_screen(self, screenshot):
+    @property
+    def bounding_box(self):
+        return getWindowGeometry(self.window_name)
+
+    def process_screen(self, screenshot: np.ndarray) -> np.ndarray:
         baw = cv2.cvtColor(screenshot, cv2.COLOR_BGR2GRAY)
         baw = cv2.Canny(baw, threshold1=100, threshold2=300)
         element = cv2.getStructuringElement(shape=cv2.MORPH_RECT, ksize=(3, 3))
-
         baw = cv2.dilate(baw, element, iterations=3)
         baw = cv2.GaussianBlur(baw, (3, 3), 0)
-
-        cut = baw[96:224, :]
-
-        final = cv2.resize(cut, (128, 128))
-
-        for i in range(1, 21):
-            direction = np.pi * i / 20
-            collison = self.find_end(direction, final)
-            final = cv2.circle(final, collison, 1, (255, 255, 255), 1)
-            # final = cv2.line(final, (64, 127), collison, (255, 255, 255), 2)
-
-        return final
-
-    def raycasting(self, frame, N_ranges=16):
-        pass
+        baw = cv2.resize(baw, (128, 128))
+        height = len(baw)
+        cut = baw[height // 2 : height // 2 + 32, :]
+        return cut
 
     def is_inbouds(self, x, y, frame):
         return x >= 0 and x < len(frame[0]) and y >= 0 and y < len(frame)
@@ -70,54 +56,71 @@ class GameViewer:
             cur_x += dx
             cur_y -= dy
 
-        return int(cur_x), int(cur_y)
+        return [int(cur_x), int(cur_y)]
 
-    def ROICrop(self, screenshot, x, y, w, h):
-        return screenshot[y : y + h, x : x + w]
+    def get_distance(self, processed_img, direction, ref_size):
+        collision = self.find_end(direction, processed_img)
+        return np.hypot(*collision) / ref_size
 
-    def capture_and_save(self, save_path="./images", save=False):
-        it = 0
-        while True:
-            self.bounding_box = getWindowGeometry(TEST)
-            it += 1
-            sct_img = np.array(
-                cv2.resize(
-                    cv2.cvtColor(
-                        np.array(self.sct.grab(self.bounding_box)), cv2.COLOR_RGBA2RGB
-                    ),
-                    (256, 256),
-                )
-            )
-            processed = self.process_screen(sct_img)
-            cv2.imshow("screen", cv2.resize(sct_img, (512, 512)))
-            cv2.imshow("processed", cv2.resize(processed, (512, 512)))
+    def get_obs(self, N_rays=15):
+        processed_img = self.get_frame()
+        ref_size = np.hypot(processed_img.shape[0], processed_img.shape[1])
+        collisions = np.zeros(N_rays)
+        for i in range(N_rays):
+            direction = np.pi * i / N_rays
+            collisions[i] = self.get_distance(processed_img, direction, ref_size)
 
-            if it % 100 == 0 and save:
-                print(it)
-                path = os.path.join(save_path, "screen_" + str(it) + ".jpg")
-                cv2.imwrite(path, sct_img)
-                print("saved")
-
-            if (cv2.waitKey(1) & 0xFF) == ord("q"):
-                cv2.destroyAllWindows(sct_img)
-
-                break
+        return collisions.astype(np.float32)
 
     def get_frame(
         self,
-    ):
-        self.bounding_box = getWindowGeometry(TEST)
+        size=(256, 256),
+    ) -> np.ndarray:
+        """
+        Pulls a frame from the game and processes it
+
+        Args:
+            size (tuple, optional): size to resize the screenshot to. Defaults to (256, 256).
+
+        Returns:
+            np.ndarray: processed frame
+        """
         sct_img = cv2.resize(
-            cv2.cvtColor(
-                np.array(self.sct.grab(self.bounding_box)), cv2.COLOR_RGBA2RGB
-            ),
-            (128, 128),
+            self.get_raw_frame(),
+            size,
         )
         sct_img = self.process_screen(sct_img)
-        res = np.array(sct_img)
-        return res
+
+        return sct_img
+
+    def get_raw_frame(self):
+        """
+        Returns the raw frame
+        """
+        return cv2.cvtColor(
+            np.array(self.sct.grab(self.bounding_box)), cv2.COLOR_RGB2BGR
+        )
+
+    def view(self):
+        """
+        Shows the current frame
+        """
+        it = 0
+        while True:
+            it += 1
+            # print(it)
+            cur_frame = self.get_raw_frame()
+            cv2.imshow("frame", cur_frame)
+            cv2.imshow(
+                "processed", cv2.resize(self.process_screen(cur_frame), (512, 192))
+            )
+            # print(self.get_obs())
+
+            if (cv2.waitKey(1) & 0xFF) == ord("q"):
+                cv2.destroyAllWindows()
+                break
 
 
 if __name__ == "__main__":
     viewer = GameViewer()
-    viewer.capture_and_save(save=False)
+    viewer.view()
