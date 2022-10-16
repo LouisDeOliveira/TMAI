@@ -25,12 +25,13 @@ class GameViewer:
     def bounding_box(self):
         return getWindowGeometry(self.window_name)
 
-    def process_screen(self, screenshot: np.ndarray) -> np.ndarray:
+    def process_screen(self, screenshot: np.ndarray, show_rays=False) -> np.ndarray:
         baw = cv2.cvtColor(screenshot, cv2.COLOR_BGR2GRAY)
         baw = cv2.Canny(baw, threshold1=100, threshold2=300)
-        element = cv2.getStructuringElement(shape=cv2.MORPH_RECT, ksize=(3, 3))
+        element = cv2.getStructuringElement(shape=cv2.MORPH_RECT, ksize=(5, 5))
         baw = cv2.dilate(baw, element, iterations=3)
         baw = cv2.GaussianBlur(baw, (3, 3), 0)
+
         baw = cv2.resize(baw, (128, 128))
         height = len(baw)
         cut = baw[height // 2 : height // 2 + 32, :]
@@ -114,8 +115,6 @@ class GameViewer:
             cv2.imshow(
                 "processed", cv2.resize(self.process_screen(cur_frame), (512, 192))
             )
-            # print(self.get_obs())
-
             if (cv2.waitKey(1) & 0xFF) == ord("q"):
                 cv2.destroyAllWindows()
                 break
