@@ -20,6 +20,10 @@ ObsType = TypeVar("ObsType")
 ActType = TypeVar("ActType")
 T = TypeVar("T")
 
+# TODO : Separate env and agent
+# TODO : Rework env and interface interaction
+# TODO : Put torch stuff in a separate file
+
 
 class TMNFEnv(gym.Env):
     def __init__(self, agent: "Agent", value: "Value"):
