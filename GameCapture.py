@@ -25,7 +25,7 @@ class GameViewer:
     def bounding_box(self):
         return getWindowGeometry(self.window_name)
 
-    def process_screen(self, screenshot: np.ndarray, show_rays=False) -> np.ndarray:
+    def process_screen(self, screenshot: np.ndarray) -> np.ndarray:
         baw = cv2.cvtColor(screenshot, cv2.COLOR_BGR2GRAY)
         baw = cv2.Canny(baw, threshold1=100, threshold2=300)
         element = cv2.getStructuringElement(shape=cv2.MORPH_RECT, ksize=(5, 5))
@@ -36,6 +36,17 @@ class GameViewer:
         height = len(baw)
         cut = baw[height // 2 : height // 2 + 32, :]
         return cut
+
+    def show_rays(self, frame, n_rays=16):
+        """
+        Shows the rays of the frame
+        """
+        rays = self.get_rays(frame, n_rays=n_rays, keep_horizontal=False)
+        ref_point = (len(frame[0]) // 2, len(frame) - 1)
+        for ray in rays:
+            cv2.line(frame, ref_point, tuple(ray), (255, 0, 0), 1)
+
+        return frame
 
     def is_inbouds(self, x, y, frame):
         return x >= 0 and x < len(frame[0]) and y >= 0 and y < len(frame)
@@ -59,19 +70,27 @@ class GameViewer:
 
         return [int(cur_x), int(cur_y)]
 
-    def get_distance(self, processed_img, direction, ref_size):
-        collision = self.find_end(direction, processed_img)
-        return np.hypot(*collision) / ref_size
+    def get_distance(self, point, ref_size, ref_point=(64, 127)):
+        return np.linalg.norm(np.array(point) - np.array(ref_point), 2) / ref_size
 
-    def get_obs(self, N_rays=15):
+    def get_rays(self, frame, n_rays=16, keep_horizontal=True):
+        """
+        Returns the rays of the frame
+        """
+        rays = []
+        iterator = range(n_rays) if keep_horizontal else range(1, n_rays - 1)
+        for i in iterator:
+            rays.append(self.find_end(i * np.pi / (n_rays - 1), frame))
+        return rays
+
+    def get_obs(self, N_rays=16):
         processed_img = self.get_frame()
         ref_size = np.hypot(processed_img.shape[0], processed_img.shape[1])
-        collisions = np.zeros(N_rays)
-        for i in range(N_rays):
-            direction = np.pi * i / N_rays
-            collisions[i] = self.get_distance(processed_img, direction, ref_size)
+        rays = self.get_rays(processed_img, N_rays)
+        ref_point = (len(processed_img[0]) // 2, len(processed_img) - 1)
+        distances = [self.get_distance(ray, ref_size, ref_point) for ray in rays]
 
-        return collisions.astype(np.float32)
+        return np.array(distances).astype(np.float32)
 
     def get_frame(
         self,
@@ -109,11 +128,14 @@ class GameViewer:
         it = 0
         while True:
             it += 1
-            # print(it)
             cur_frame = self.get_raw_frame()
             cv2.imshow("frame", cur_frame)
             cv2.imshow(
-                "processed", cv2.resize(self.process_screen(cur_frame), (512, 192))
+                "processed",
+                cv2.resize(
+                    self.show_rays(self.process_screen(cur_frame), n_rays=9),
+                    (512, 192),
+                ),
             )
             if (cv2.waitKey(1) & 0xFF) == ord("q"):
                 cv2.destroyAllWindows()
