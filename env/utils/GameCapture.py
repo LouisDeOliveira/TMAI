@@ -1,8 +1,8 @@
-import numpy as np
 import cv2
-from mss import mss
-import os
+import numpy as np
 import win32.win32gui as wind32
+from mss import mss
+from constants import GAME_WINDOW_NAME
 
 
 def getWindowGeometry(name: str) -> tuple:
@@ -16,10 +16,11 @@ def getWindowGeometry(name: str) -> tuple:
 
 
 class GameViewer:
-    def __init__(self) -> None:
+    def __init__(self, N_rays: int = 16) -> None:
 
-        self.window_name = "TrackMania Nations Forever (TMInterface 1.1.1)"
+        self.window_name = GAME_WINDOW_NAME
         self.sct = mss()
+        self.N_rays = N_rays
 
     @property
     def bounding_box(self):
@@ -27,6 +28,7 @@ class GameViewer:
 
     def process_screen(self, screenshot: np.ndarray) -> np.ndarray:
         baw = cv2.cvtColor(screenshot, cv2.COLOR_BGR2GRAY)
+        baw = cv2.threshold(baw, 32, 255, cv2.THRESH_BINARY)[1]
         baw = cv2.Canny(baw, threshold1=100, threshold2=300)
         element = cv2.getStructuringElement(shape=cv2.MORPH_RECT, ksize=(5, 5))
         baw = cv2.dilate(baw, element, iterations=3)
@@ -37,11 +39,11 @@ class GameViewer:
         cut = baw[height // 2 : height // 2 + 32, :]
         return cut
 
-    def show_rays(self, frame, n_rays=16):
+    def show_rays(self, frame):
         """
         Shows the rays of the frame
         """
-        rays = self.get_rays(frame, n_rays=n_rays, keep_horizontal=False)
+        rays = self.get_rays(frame, keep_horizontal=False)
         ref_point = (len(frame[0]) // 2, len(frame) - 1)
         for ray in rays:
             cv2.line(frame, ref_point, tuple(ray), (255, 0, 0), 1)
@@ -73,20 +75,20 @@ class GameViewer:
     def get_distance(self, point, ref_size, ref_point=(64, 127)):
         return np.linalg.norm(np.array(point) - np.array(ref_point), 2) / ref_size
 
-    def get_rays(self, frame, n_rays=16, keep_horizontal=True):
+    def get_rays(self, frame, keep_horizontal=True):
         """
         Returns the rays of the frame
         """
         rays = []
-        iterator = range(n_rays) if keep_horizontal else range(1, n_rays - 1)
+        iterator = range(self.N_rays) if keep_horizontal else range(1, self.N_rays - 1)
         for i in iterator:
-            rays.append(self.find_end(i * np.pi / (n_rays - 1), frame))
+            rays.append(self.find_end(i * np.pi / (self.N_rays - 1), frame))
         return rays
 
-    def get_obs(self, N_rays=16):
+    def get_obs(self):
         processed_img = self.get_frame()
         ref_size = np.hypot(processed_img.shape[0], processed_img.shape[1])
-        rays = self.get_rays(processed_img, N_rays)
+        rays = self.get_rays(processed_img)
         ref_point = (len(processed_img[0]) // 2, len(processed_img) - 1)
         distances = [self.get_distance(ray, ref_size, ref_point) for ray in rays]
 
@@ -133,7 +135,7 @@ class GameViewer:
             cv2.imshow(
                 "processed",
                 cv2.resize(
-                    self.show_rays(self.process_screen(cur_frame), n_rays=9),
+                    self.show_rays(self.process_screen(cur_frame)),
                     (512, 192),
                 ),
             )
