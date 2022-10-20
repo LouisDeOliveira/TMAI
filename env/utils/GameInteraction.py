@@ -1,6 +1,7 @@
 import ctypes
 import time
 import win32gui
+import numpy as np
 from enum import Enum
 from constants import GAME_WINDOW_NAME, GAME_WINDOW_NAME
 
@@ -11,6 +12,20 @@ class ArrowInputs(Enum):
     LEFT = 0xCB
     RIGHT = 0xCD
     DEL = 0xD3
+
+    def from_bin_vector(vec: np.ndarray) -> list["ArrowInputs"]:
+        # UP DOWN NONE LEFT RIGHT NONE
+        dico = {
+            0: ArrowInputs.UP,
+            1: ArrowInputs.DOWN,
+            2: ArrowInputs.LEFT,
+            3: ArrowInputs.RIGHT,
+        }
+        up_idx = np.argmax(vec[:3])
+        up_down = dico[up_idx] if up_idx != 2 else None
+        left_idx = np.argmax(vec[3:])
+        left_right = dico[left_idx + 2] if np.argmax(vec[3:]) != 2 else None
+        return [up_down, left_right]
 
 
 PUL = ctypes.POINTER(ctypes.c_ulong)
@@ -78,6 +93,8 @@ class InputManager:
 
     def play_inputs(self, inputs: list[ArrowInputs]):
         for input_ in inputs:
+            if input_ is None:
+                continue
             self.press_key(input_)
             time.sleep(self.input_duration)
             self.release_key(input_)
