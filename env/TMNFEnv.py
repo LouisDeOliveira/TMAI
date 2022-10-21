@@ -1,11 +1,12 @@
-from code import interact
-from gym import Env
-from gym.spaces import Discrete, Box
+from typing import TypeVar
+
 import numpy as np
-from typing import Generic, Union, TypeVar
-from env.utils.GameCapture import GameViewer
-from env.utils.GameInteraction import InputManager, ArrowInputs
+from gym import Env
+from gym.spaces import Box, Discrete
+
 from env.TMIClient import ThreadedClient
+from env.utils.GameCapture import GameViewer
+from env.utils.GameInteraction import ArrowInputs, InputManager
 
 ArrowsActionSpace = Discrete(4, start=0)  # up down right left
 ControllerActionSpace = Box(
@@ -20,7 +21,7 @@ class TrackmaniaEnv(Env):
         self,
         simthread: ThreadedClient,
         action_space: "str" = "arrows",
-        N_rays: int = 16,
+        n_rays: int = 16,
     ):
 
         self.action_space = (
@@ -28,18 +29,20 @@ class TrackmaniaEnv(Env):
         )
         print(self.action_space)
         self.observation_space = Box(
-            low=0.0, high=1.0, shape=(N_rays,), dtype=np.float32
+            low=0.0, high=1.0, shape=(n_rays,), dtype=np.float32
         )
 
-        self.viewer = GameViewer(N_rays=N_rays)
+        self.viewer = GameViewer(n_rays=n_rays)
         self.simthread = simthread
         self.input_manager = InputManager()
         self.total_reward = 0.0
         self.n_steps = 0
         self.max_steps = 1000
         self.command_frequency = 50
+        self.last_action = None
 
     def step(self, action):
+        self.last_action = action
         self.input_manager.play_inputs_no_release(self.action_to_command(action))
         done = (
             True
@@ -57,6 +60,8 @@ class TrackmaniaEnv(Env):
         self.n_steps = 0
         self._restart_race()
         self.time = 0
+        self.last_action = None
+
         print("reset done")
 
         return self.viewer.get_obs()

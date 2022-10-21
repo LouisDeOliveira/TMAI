@@ -25,12 +25,12 @@ class ThreadedClient:
     """
 
     def __init__(self) -> None:
+        self.iface = TMInterface()
         self.tmi_client = SimStateClient()
         self._client_thread = Thread(target=self.client_thread, daemon=True)
         self._lock = Lock()
         self.data = None
         self._client_thread.start()
-        self.iface = TMInterface()
 
     def client_thread(self):
         client = SimStateClient()
@@ -46,5 +46,3 @@ class ThreadedClient:
 
 if __name__ == "__main__":
     simthread = ThreadedClient()
-    while True:
-        print(simthread.data)

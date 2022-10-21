@@ -3,7 +3,7 @@ import time
 import win32gui
 import numpy as np
 from enum import Enum
-from env.utils.constants import GAME_WINDOW_NAME, GAME_WINDOW_NAME
+from .constants import GAME_WINDOW_NAME, GAME_WINDOW_NAME
 
 
 class ArrowInputs(Enum):

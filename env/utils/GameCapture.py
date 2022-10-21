@@ -1,8 +1,8 @@
-from cv2 import cv2
+import cv2
 import numpy as np
 import win32.win32gui as wind32
 from mss import mss
-from .constants import GAME_WINDOW_NAME
+from env.utils.constants import GAME_WINDOW_NAME
 
 
 def getWindowGeometry(name: str) -> tuple:
@@ -16,11 +16,11 @@ def getWindowGeometry(name: str) -> tuple:
 
 
 class GameViewer:
-    def __init__(self, N_rays: int = 16) -> None:
+    def __init__(self, n_rays: int = 16) -> None:
 
         self.window_name = GAME_WINDOW_NAME
         self.sct = mss()
-        self.N_rays = N_rays
+        self.n_rays = n_rays
 
     @property
     def bounding_box(self):
@@ -81,9 +81,9 @@ class GameViewer:
         Returns the rays of the frame
         """
         rays = []
-        iterator = range(self.N_rays) if keep_horizontal else range(1, self.N_rays - 1)
+        iterator = range(self.n_rays) if keep_horizontal else range(1, self.n_rays - 1)
         for i in iterator:
-            rays.append(self.find_end(i * np.pi / (self.N_rays - 1), frame))
+            rays.append(self.find_end(i * np.pi / (self.n_rays - 1), frame))
         return rays
 
     def get_obs(self):
