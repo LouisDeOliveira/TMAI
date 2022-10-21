@@ -19,12 +19,18 @@ Finally in order to get an input for our RL agents we simulate a LIDAR on the pr
 The input given to our agents can be either of these images or the array of distances computed from the raycasting.
 
 # Current Objectives
-
-- [x] Finish implementing arrow keys input simulation
+- [x] Extract and process frames from the game
+- [x] Send controls to the game using windows api
+- [x] Get car status from TMInterfac
+- [x] Implement arrow keys input simulation
 - [ ] Implement Gamepad input simulation
 - [x] Run TMInterface in separate thread to get data from the game more efficiently
-- [ ] Finish implementing general training routines for most RL methods, allow for online or offline training
+- [ ] Implement general training routines for most RL methods
+- [ ] Allow for online or offline training
+- [ ] High level agent factory for easy testing
+- [ ] WandB benchmarking tool and dashboard
 - [ ] (OPTIONAL) Look into implementing parallel envs by running multiple instances of the game
+- [ ] (OPTIONAL) Automate setup of the game
 
 
 # References
