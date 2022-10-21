@@ -33,6 +33,7 @@ class GameViewer:
         element = cv2.getStructuringElement(shape=cv2.MORPH_RECT, ksize=(5, 5))
         baw = cv2.dilate(baw, element, iterations=3)
         baw = cv2.GaussianBlur(baw, (3, 3), 0)
+        baw = cv2.threshold(baw, 1, 255, cv2.THRESH_BINARY)[1]
 
         baw = cv2.resize(baw, (128, 128))
         height = len(baw)
