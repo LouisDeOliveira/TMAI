@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import win32.win32gui as wind32
 from mss import mss
-from env.utils.constants import GAME_WINDOW_NAME
+from tmai.env.utils.constants import GAME_WINDOW_NAME
 
 
 def getWindowGeometry(name: str) -> tuple:

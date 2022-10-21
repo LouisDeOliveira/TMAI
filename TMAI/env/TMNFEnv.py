@@ -4,9 +4,9 @@ import numpy as np
 from gym import Env
 from gym.spaces import Box, Discrete
 
-from env.TMIClient import ThreadedClient
-from env.utils.GameCapture import GameViewer
-from env.utils.GameInteraction import ArrowInputs, InputManager
+from tmai.env.TMIClient import ThreadedClient
+from tmai.env.utils.GameCapture import GameViewer
+from tmai.env.utils.GameInteraction import ArrowInputs, InputManager
 
 ArrowsActionSpace = Discrete(4, start=0)  # up down right left
 ControllerActionSpace = Box(

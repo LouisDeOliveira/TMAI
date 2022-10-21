@@ -1,6 +1,6 @@
-from agent import RandomArrowsAgent
-from env.TMIClient import ThreadedClient
-from env.TMNFEnv import TrackmaniaEnv
+from tmai.agents.agent import RandomArrowsAgent
+from tmai.env.TMIClient import ThreadedClient
+from tmai.env.TMNFEnv import TrackmaniaEnv
 
 
 def play_simulation():
