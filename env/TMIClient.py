@@ -5,6 +5,11 @@ import time
 
 
 class SimStateClient(Client):
+    """
+    Client for a TMInterface instance.
+    Its only job is to get the simulation state that is used by the gym env for reward computation.
+    """
+
     def __init__(self):
         self.sim_state = None
 
@@ -13,6 +18,10 @@ class SimStateClient(Client):
 
 
 class ThreadedClient:
+    """
+    Allows to run the Client in a separate thread, so that the gym env can run in the main thread.
+    """
+
     def __init__(self) -> None:
         self.TMIClient = SimStateClient()
         self._client_thread = Thread(target=self.client_thread, daemon=True)
