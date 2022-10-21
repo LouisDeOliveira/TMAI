@@ -131,15 +131,19 @@ class GameViewer:
         while True:
             it += 1
             cur_frame = self.get_raw_frame()
+            processed_frame = self.process_screen(cur_frame)
+            raytrace = self.show_rays(processed_frame)
+
             cv2.imshow("frame", cur_frame)
             cv2.imshow(
                 "processed",
                 cv2.resize(
-                    self.show_rays(self.process_screen(cur_frame)),
+                    raytrace,
                     (512, 192),
                 ),
             )
             if (cv2.waitKey(1) & 0xFF) == ord("q"):
+
                 cv2.destroyAllWindows()
                 break
 

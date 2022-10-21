@@ -4,6 +4,7 @@ from gym.spaces import Discrete, Box
 import numpy as np
 from typing import Generic, Union, TypeVar
 from env.utils.GameCapture import GameViewer
+from env.utils.GameInteraction import InputManager, ArrowInputs
 from tminterface.client import Client
 from tminterface.interface import TMInterface
 import time
@@ -27,15 +28,14 @@ class TrackmaniaEnv(Env):
         )
 
         self.viewer = GameViewer(N_rays=N_rays)
+        self.input_manager = InputManager()
         self.total_reward = 0.0
         self.n_steps = 0
         self.max_steps = 1000
         self.command_frequency = 50
 
     def step(self, action):
-        state = self.interface.get_simulation_state()
-        if state.time < 3000 and state.display_speed < 0.1:
-            return self.viewer.get_obs(), 0, False, {}
+        self.input_manager.play_inputs(self.action_to_command(action))
         done = (
             True
             if self.n_steps >= self.max_steps or self.total_reward < -300
@@ -72,20 +72,11 @@ class TrackmaniaEnv(Env):
         return [f"gas {gas}", f"steer {steer}"]
 
     def _discrete_action_to_command(self, action):
-        commands = []
-        if action == 0:
-            commands.append("press up")
-        elif action == 1:
-            commands.append("press down")
-        elif action == 2:
-            commands.append("press right")
-        elif action == 3:
-            commands.append("press left")
-
+        commands = ArrowInputs.from_bin_vector(action)
         return commands
 
     def _restart_race(self):
-        self.interface.execute_command("press delete")
+        self.input_manager.play_inputs([ArrowInputs.DEL])
 
     @property
     def state(self):
