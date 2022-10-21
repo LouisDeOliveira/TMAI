@@ -1,0 +1,8 @@
+numpy
+tminterface
+torch
+torchvision
+gym
+opencv-python
+mss
+pywin23
