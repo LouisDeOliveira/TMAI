@@ -25,5 +25,6 @@ The input given to our agents can be either of these images or the array of dist
 - [ ] Run TMInterface in separate thread to get data from the game more efficiently
 
 #References
-TMInterface :
-TMRL :
+
+- TMInterface : https://donadigo.com/tminterface/
+- TMRL : https://github.com/trackmania-rl/tmrl
