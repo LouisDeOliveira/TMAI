@@ -17,9 +17,13 @@ ObsType = TypeVar("ObsType")
 
 
 class TrackmaniaEnv(Env):
+    """
+    Gym env interfacing the game.
+    Observations are the rays of the game viewer.
+    Controls are the arrow keys or the gas and steer.
+    """
     def __init__(
         self,
-        simthread: ThreadedClient,
         action_space: "str" = "arrows",
         n_rays: int = 16,
     ):
@@ -32,7 +36,7 @@ class TrackmaniaEnv(Env):
         )
 
         self.viewer = GameViewer(n_rays=n_rays)
-        self.simthread = simthread
+        self.simthread = ThreadedClient()
         self.input_manager = InputManager()
         self.total_reward = 0.0
         self.n_steps = 0

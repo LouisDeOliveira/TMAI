@@ -39,7 +39,7 @@ class Buffer(Generic[T]):
 
 
 def play_episode(agent:Agent, env:TrackmaniaEnv) -> Episode:
-    env = TrackmaniaEnv(simthread=ThreadedClient(), action_space="arrows")
+    env = TrackmaniaEnv(action_space="arrows")
     episode = []
     observation = env.reset()
     done = False
