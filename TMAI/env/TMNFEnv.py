@@ -27,7 +27,6 @@ class TrackmaniaEnv(Env):
         self.action_space = (
             ArrowsActionSpace if action_space == "arrows" else ControllerActionSpace
         )
-        print(self.action_space)
         self.observation_space = Box(
             low=0.0, high=1.0, shape=(n_rays,), dtype=np.float32
         )
