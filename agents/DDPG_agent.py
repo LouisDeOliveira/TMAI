@@ -79,25 +79,6 @@ class Value(nn.Module, Agent):
         return z
 
 
-class Buffer(Generic[T]):
-    def __init__(self, capacity=100000):
-        self.capacity = capacity
-        self.memory = deque([], maxlen=capacity)
-
-    def append(self, *args):
-        transition = Transition(*args)
-        self.memory.append(transition)
-
-    def sample(self, batch_size) -> Iterable[T]:
-        return random.sample(self.memory, batch_size)
-
-    def reset(self):
-        self.memory.clear()
-
-    def __len__(self):
-        return len(self.memory)
-
-
 class OUActionNoise:
     def __init__(
         self,
@@ -142,11 +123,3 @@ class OUActionNoise:
         self.x_prev = x
         self.num_steps += 1
         return x
-
-
-@dataclass
-class Transition:
-    state: np.ndarray
-    action: np.ndarray
-    next_state: np.ndarray
-    reward: float
