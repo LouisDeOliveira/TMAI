@@ -1,7 +1,8 @@
+import time
+from threading import Lock, Thread
+
 from tminterface.client import Client
 from tminterface.interface import TMInterface
-from threading import Thread, Lock
-import time
 
 
 class SimStateClient(Client):
@@ -11,6 +12,7 @@ class SimStateClient(Client):
     """
 
     def __init__(self):
+        super().__init__()
         self.sim_state = None
 
     def on_run_step(self, iface, _time: int):
@@ -23,7 +25,7 @@ class ThreadedClient:
     """
 
     def __init__(self) -> None:
-        self.TMIClient = SimStateClient()
+        self.tmi_client = SimStateClient()
         self._client_thread = Thread(target=self.client_thread, daemon=True)
         self._lock = Lock()
         self.data = None

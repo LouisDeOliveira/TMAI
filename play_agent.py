@@ -1,8 +1,6 @@
-from time import time
-from env.TMNFEnv import TrackmaniaEnv
-from agents.agent import RandomAgent, RandomArrowsAgent
+from agents.agent import RandomArrowsAgent
 from env.TMIClient import ThreadedClient
-import time
+from env.TMNFEnv import TrackmaniaEnv
 
 
 def play_simulation():
