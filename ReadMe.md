@@ -1,6 +1,6 @@
 # TrackMania Nations Forever AI
 
-This projects aim to design and implement a gym environnement running in real time on the game TrackMania Nations Forever, using TMInterface. The objective will then be to implement a bunch on different classic RL methods on this environnement.
+This projects aims to design and implement a gym environnement running in real time on the game TrackMania Nations Forever, using TMInterface. The objective will then be to implement a bunch on different classic RL methods on this environnement.
 
 # Game screen image analysis
 
@@ -20,6 +20,7 @@ The input given to our agents can be either of these images or the array of dist
 
 # Current Objectives
 - [x] Extract and process frames from the game
+- [x] Add raycasting observation
 - [x] Send controls to the game using windows api
 - [x] Get car status from TMInterface
 - [x] Implement arrow keys input simulation
