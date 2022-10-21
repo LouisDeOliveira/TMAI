@@ -3,7 +3,7 @@ import time
 import win32gui
 import numpy as np
 from enum import Enum
-from constants import GAME_WINDOW_NAME, GAME_WINDOW_NAME
+from env.utils.constants import GAME_WINDOW_NAME, GAME_WINDOW_NAME
 
 
 class ArrowInputs(Enum):
@@ -13,19 +13,20 @@ class ArrowInputs(Enum):
     RIGHT = 0xCD
     DEL = 0xD3
 
-    def from_bin_vector(vec: np.ndarray) -> list["ArrowInputs"]:
-        # UP DOWN NONE LEFT RIGHT NONE
-        dico = {
-            0: ArrowInputs.UP,
-            1: ArrowInputs.DOWN,
-            2: ArrowInputs.LEFT,
-            3: ArrowInputs.RIGHT,
-        }
-        up_idx = np.argmax(vec[:3])
-        up_down = dico[up_idx] if up_idx != 2 else None
-        left_idx = np.argmax(vec[3:])
-        left_right = dico[left_idx + 2] if np.argmax(vec[3:]) != 2 else None
-        return [up_down, left_right]
+    def from_agent_out(vec: np.ndarray) -> list["ArrowInputs"]:
+        inputs = []
+        if vec[0] > 0.5:
+            inputs.append(ArrowInputs.UP)
+        else:
+            inputs.append(ArrowInputs.DOWN)
+
+        if vec[1] > 0.5:
+            inputs.append(ArrowInputs.RIGHT)
+
+        else:
+            inputs.append(ArrowInputs.LEFT)
+
+        return inputs
 
 
 PUL = ctypes.POINTER(ctypes.c_ulong)
@@ -70,7 +71,7 @@ class Input(ctypes.Structure):
 
 class InputManager:
     def __init__(
-        self, input_duration: float = 0.1, window_name: str = GAME_WINDOW_NAME
+        self, input_duration: float = 0.05, window_name: str = GAME_WINDOW_NAME
     ) -> None:
         self.input_duration = input_duration
         self.window_name = window_name
@@ -99,10 +100,31 @@ class InputManager:
             time.sleep(self.input_duration)
             self.release_key(input_)
 
+    def play_inputs_no_release(self, inputs: ArrowInputs):
+        if ArrowInputs.UP in inputs:
+            self.press_key(ArrowInputs.UP)
+        else:
+            self.release_key(ArrowInputs.UP)
+
+        if ArrowInputs.DOWN in inputs:
+            self.press_key(ArrowInputs.DOWN)
+        else:
+            self.release_key(ArrowInputs.DOWN)
+
+        if ArrowInputs.LEFT in inputs:
+            self.press_key(ArrowInputs.LEFT)
+        else:
+            self.release_key(ArrowInputs.LEFT)
+
+        if ArrowInputs.RIGHT in inputs:
+            self.press_key(ArrowInputs.RIGHT)
+        else:
+            self.release_key(ArrowInputs.RIGHT)
+
 
 if __name__ == "__main__":
     input_manager = InputManager(input_duration=0.1)
     import random
 
     for _ in range(100):
-        input_manager.play_inputs([ArrowInputs.UP])
+        input_manager.play_inputs([ArrowInputs.DEL])
