@@ -28,3 +28,4 @@ The input given to our agents can be either of these images or the array of dist
 
 - TMInterface : https://donadigo.com/tminterface/
 - TMRL : https://github.com/trackmania-rl/tmrl
+- MSS : https://python-mss.readthedocs.io/
