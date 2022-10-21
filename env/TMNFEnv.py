@@ -5,9 +5,7 @@ import numpy as np
 from typing import Generic, Union, TypeVar
 from env.utils.GameCapture import GameViewer
 from env.utils.GameInteraction import InputManager, ArrowInputs
-from tminterface.client import Client
-from tminterface.interface import TMInterface
-import time
+from env.TMIClient import ThreadedClient
 
 ArrowsActionSpace = Discrete(4, start=0)  # up down right left
 ControllerActionSpace = Box(
@@ -18,16 +16,23 @@ ObsType = TypeVar("ObsType")
 
 
 class TrackmaniaEnv(Env):
-    def __init__(self, action_space: "str" = "arrows", N_rays: int = 16):
+    def __init__(
+        self,
+        simthread: ThreadedClient,
+        action_space: "str" = "arrows",
+        N_rays: int = 16,
+    ):
 
         self.action_space = (
             ArrowsActionSpace if action_space == "arrows" else ControllerActionSpace
         )
+        print(self.action_space)
         self.observation_space = Box(
             low=0.0, high=1.0, shape=(N_rays,), dtype=np.float32
         )
 
         self.viewer = GameViewer(N_rays=N_rays)
+        self.simthread = simthread
         self.input_manager = InputManager()
         self.total_reward = 0.0
         self.n_steps = 0
@@ -35,7 +40,7 @@ class TrackmaniaEnv(Env):
         self.command_frequency = 50
 
     def step(self, action):
-        self.input_manager.play_inputs(self.action_to_command(action))
+        self.input_manager.play_inputs_no_release(self.action_to_command(action))
         done = (
             True
             if self.n_steps >= self.max_steps or self.total_reward < -300
@@ -59,7 +64,7 @@ class TrackmaniaEnv(Env):
     def render(self, mode="human"):
         print(f"total reward: {self.total_reward}")
         print(f"speed: {self.speed}")
-        print(f"time = {self.interface.get_simulation_state().time}")
+        print(f"time = {self.state.time}")
 
     def action_to_command(self, action):
         if isinstance(self.action_space, Discrete):
@@ -72,7 +77,7 @@ class TrackmaniaEnv(Env):
         return [f"gas {gas}", f"steer {steer}"]
 
     def _discrete_action_to_command(self, action):
-        commands = ArrowInputs.from_bin_vector(action)
+        commands = ArrowInputs.from_agent_out(action)
         return commands
 
     def _restart_race(self):
@@ -80,7 +85,7 @@ class TrackmaniaEnv(Env):
 
     @property
     def state(self):
-        return self.interface.get_simulation_state()
+        return self.simthread.data
 
     @property
     def speed(self):
