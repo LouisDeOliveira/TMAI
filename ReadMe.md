@@ -22,7 +22,7 @@ The input given to our agents can be either of these images or the array of dist
 
 - [x] Finish implementing arrow keys input simulation
 - [ ] Implement Gamepad input simulation
-- [ ] Run TMInterface in separate thread to get data from the game more efficiently
+- [x] Run TMInterface in separate thread to get data from the game more efficiently
 
 # References
 
