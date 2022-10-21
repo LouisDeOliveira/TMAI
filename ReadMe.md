@@ -23,6 +23,9 @@ The input given to our agents can be either of these images or the array of dist
 - [x] Finish implementing arrow keys input simulation
 - [ ] Implement Gamepad input simulation
 - [x] Run TMInterface in separate thread to get data from the game more efficiently
+- [ ] Finish implementing general training routines for most RL methods, allow for online or offline training
+- [ ] (OPTIONAL) Look into implementing parallel envs by running multiple instances of the game
+
 
 # References
 
