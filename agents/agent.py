@@ -20,3 +20,8 @@ class RandomAgent(Agent):
             np.random.randint(low=-65000, high=-20000, size=1)[0],
             np.random.randint(low=-21000, high=21000, size=1)[0],
         ]
+
+
+class RandomArrowsAgent(Agent):
+    def act(self, observation: Observation) -> Action:
+        return [np.random.uniform(0.5, 1.0), np.random.uniform(0.0, 1.0)]
