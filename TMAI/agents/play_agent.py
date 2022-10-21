@@ -1,4 +1,4 @@
-from agents.agent import RandomArrowsAgent
+from agent import RandomArrowsAgent
 from env.TMIClient import ThreadedClient
 from env.TMNFEnv import TrackmaniaEnv
 
@@ -14,7 +14,6 @@ def play_simulation():
         print(action)
         observation, reward, done, info = env.step(action)
         step += 1
-        print(step)
         env.render()
 
 

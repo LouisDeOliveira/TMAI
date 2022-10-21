@@ -17,13 +17,13 @@ class ArrowInputs(Enum):
         inputs = []
         if vec[0] > 0.5:
             inputs.append(ArrowInputs.UP)
-        else:
+        elif vec[0] < -0.5:
             inputs.append(ArrowInputs.DOWN)
 
         if vec[1] > 0.5:
             inputs.append(ArrowInputs.RIGHT)
 
-        else:
+        elif vec[1] < -0.5:
             inputs.append(ArrowInputs.LEFT)
 
         return inputs
@@ -124,7 +124,6 @@ class InputManager:
 
 if __name__ == "__main__":
     input_manager = InputManager(input_duration=0.1)
-    import random
 
     for _ in range(100):
         input_manager.play_inputs([ArrowInputs.DEL])

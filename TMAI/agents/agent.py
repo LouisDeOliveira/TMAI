@@ -24,4 +24,4 @@ class RandomAgent(Agent):
 
 class RandomArrowsAgent(Agent):
     def act(self, observation: Observation) -> Action:
-        return [np.random.uniform(0.5, 1.0), np.random.uniform(0.0, 1.0)]
+        return [np.random.uniform(0.5, 1.0), np.random.uniform(-0.0, 0.0)]
