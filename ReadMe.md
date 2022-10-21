@@ -21,9 +21,9 @@ The input given to our agents can be either of these images or the array of dist
 # Current Objectives
 - [x] Extract and process frames from the game
 - [x] Send controls to the game using windows api
-- [x] Get car status from TMInterfac
+- [x] Get car status from TMInterface
 - [x] Implement arrow keys input simulation
-- [ ] Implement Gamepad input simulation
+- [ ] Implement gamepad input simulation
 - [x] Run TMInterface in separate thread to get data from the game more efficiently
 - [ ] Implement general training routines for most RL methods
 - [ ] Allow for online or offline training
