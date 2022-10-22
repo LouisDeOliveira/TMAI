@@ -2,13 +2,13 @@ from typing import TypeVar
 
 import numpy as np
 from gym import Env
-from gym.spaces import Box, Discrete
+from gym.spaces import Box, MultiBinary
 
 from tmai.env.TMIClient import ThreadedClient
 from tmai.env.utils.GameCapture import GameViewer
-from tmai.env.utils.GameInteraction import ArrowInputs, InputManager
+from tmai.env.utils.GameInteraction import ArrowInput, InputManager
 
-ArrowsActionSpace = Discrete(4, start=0)  # up down right left
+ArrowsActionSpace = MultiBinary((4,))  # none up down right left
 ControllerActionSpace = Box(
     low=-65536, high=65536, shape=(2,), dtype=np.int32
 )  # gas and steer
@@ -31,6 +31,7 @@ class TrackmaniaEnv(Env):
         self.action_space = (
             ArrowsActionSpace if action_space == "arrows" else ControllerActionSpace
         )
+        print(self.action_space.sample())
         self.observation_space = Box(
             low=0.0, high=1.0, shape=(n_rays,), dtype=np.float32
         )
@@ -75,7 +76,7 @@ class TrackmaniaEnv(Env):
         print(f"time = {self.state.time}")
 
     def action_to_command(self, action):
-        if isinstance(self.action_space, Discrete):
+        if isinstance(self.action_space, MultiBinary):
             return self._discrete_action_to_command(action)
         elif isinstance(self.action_space, Box):
             return self._continuous_action_to_command(action)
@@ -85,11 +86,11 @@ class TrackmaniaEnv(Env):
         return [f"gas {gas}", f"steer {steer}"]
 
     def _discrete_action_to_command(self, action):
-        commands = ArrowInputs.from_agent_out(action)
+        commands = ArrowInput.from_discrete_agent_out(action)
         return commands
 
     def _restart_race(self):
-        self.input_manager.play_inputs([ArrowInputs.DEL])
+        self.input_manager.play_inputs([ArrowInput.DEL])
 
     @property
     def state(self):

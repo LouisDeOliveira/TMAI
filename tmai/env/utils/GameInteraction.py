@@ -6,25 +6,45 @@ from enum import Enum
 from tmai.env.utils.constants import GAME_WINDOW_NAME, GAME_WINDOW_NAME
 
 
-class ArrowInputs(Enum):
+class ArrowInput(Enum):
     UP = 0xC8
     DOWN = 0xD0
     LEFT = 0xCB
     RIGHT = 0xCD
     DEL = 0xD3
 
-    def from_agent_out(vec: np.ndarray) -> list["ArrowInputs"]:
+    def from_continuous_agent_out(vec: np.ndarray) -> list["ArrowInput"]:
+        """
+        Vector of size 2, gas and steer converted to discrete inputs
+        """
         inputs = []
         if vec[0] > 0.5:
-            inputs.append(ArrowInputs.UP)
+            inputs.append(ArrowInput.UP)
         elif vec[0] < -0.5:
-            inputs.append(ArrowInputs.DOWN)
+            inputs.append(ArrowInput.DOWN)
 
         if vec[1] > 0.5:
-            inputs.append(ArrowInputs.RIGHT)
+            inputs.append(ArrowInput.RIGHT)
 
         elif vec[1] < -0.5:
-            inputs.append(ArrowInputs.LEFT)
+            inputs.append(ArrowInput.LEFT)
+
+        return inputs
+    
+    def from_discrete_agent_out(vec: np.ndarray) -> list["ArrowInput"]:
+        "binary inpuit vector, for each action, 1 if pressed, 0 if not"
+        inputs = []
+        if vec[0] == 1:
+            inputs.append(ArrowInput.UP)
+            
+        elif vec[1] == 1:
+            inputs.append(ArrowInput.DOWN)
+
+        if vec[2] == 1:
+            inputs.append(ArrowInput.RIGHT)
+
+        elif vec[3] == 1:
+            inputs.append(ArrowInput.LEFT)
 
         return inputs
 
@@ -78,21 +98,21 @@ class InputManager:
         self.hwnd = ctypes.windll.user32.FindWindowW(None, self.window_name)
         win32gui.SetForegroundWindow(self.hwnd)
 
-    def press_key(self, key: ArrowInputs):
+    def press_key(self, key: ArrowInput):
         extra = ctypes.c_ulong(0)
         ii_ = Input_I()
         ii_.ki = KeyBdInput(0, key.value, 0x0008, 0, ctypes.pointer(extra))
         x = Input(ctypes.c_ulong(1), ii_)
         ctypes.windll.user32.SendInput(1, ctypes.pointer(x), ctypes.sizeof(x))
 
-    def release_key(self, key: ArrowInputs):
+    def release_key(self, key: ArrowInput):
         extra = ctypes.c_ulong(0)
         ii_ = Input_I()
         ii_.ki = KeyBdInput(0, key.value, 0x0008 | 0x0002, 0, ctypes.pointer(extra))
         x = Input(ctypes.c_ulong(1), ii_)
         ctypes.windll.user32.SendInput(1, ctypes.pointer(x), ctypes.sizeof(x))
 
-    def play_inputs(self, inputs: list[ArrowInputs]):
+    def play_inputs(self, inputs: list[ArrowInput]):
         for input_ in inputs:
             if input_ is None:
                 continue
@@ -100,30 +120,30 @@ class InputManager:
             time.sleep(self.input_duration)
             self.release_key(input_)
 
-    def play_inputs_no_release(self, inputs: ArrowInputs):
-        if ArrowInputs.UP in inputs:
-            self.press_key(ArrowInputs.UP)
+    def play_inputs_no_release(self, inputs: ArrowInput):
+        if ArrowInput.UP in inputs:
+            self.press_key(ArrowInput.UP)
         else:
-            self.release_key(ArrowInputs.UP)
+            self.release_key(ArrowInput.UP)
 
-        if ArrowInputs.DOWN in inputs:
-            self.press_key(ArrowInputs.DOWN)
+        if ArrowInput.DOWN in inputs:
+            self.press_key(ArrowInput.DOWN)
         else:
-            self.release_key(ArrowInputs.DOWN)
+            self.release_key(ArrowInput.DOWN)
 
-        if ArrowInputs.LEFT in inputs:
-            self.press_key(ArrowInputs.LEFT)
+        if ArrowInput.LEFT in inputs:
+            self.press_key(ArrowInput.LEFT)
         else:
-            self.release_key(ArrowInputs.LEFT)
+            self.release_key(ArrowInput.LEFT)
 
-        if ArrowInputs.RIGHT in inputs:
-            self.press_key(ArrowInputs.RIGHT)
+        if ArrowInput.RIGHT in inputs:
+            self.press_key(ArrowInput.RIGHT)
         else:
-            self.release_key(ArrowInputs.RIGHT)
+            self.release_key(ArrowInput.RIGHT)
 
 
 if __name__ == "__main__":
     input_manager = InputManager(input_duration=0.1)
 
     for _ in range(100):
-        input_manager.play_inputs([ArrowInputs.DEL])
+        input_manager.play_inputs([ArrowInput.DEL])
