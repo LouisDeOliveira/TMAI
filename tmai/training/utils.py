@@ -19,6 +19,9 @@ class Transition:
 
 Episode = list[Transition]
 
+def total_reward(episode:Episode) -> float:
+    return sum(t.reward for t in episode)
+
 class Buffer(Generic[T]):
     def __init__(self, capacity=100000):
         self.capacity = capacity
@@ -57,5 +60,8 @@ def play_episode(agent:Agent, env:TrackmaniaEnv) -> Episode:
     return episode
 
 if __name__ == "__main__":
-    episode = play_episode(RandomArrowsAgent(), TrackmaniaEnv(simthread=ThreadedClient(), action_space="arrows"))
-    print(len(episode))
+    env =  TrackmaniaEnv( action_space="arrows")
+    agent = RandomArrowsAgent(action_space = env.action_space)
+    while True:
+        episode = play_episode(agent, env)
+        print(len(episode))
