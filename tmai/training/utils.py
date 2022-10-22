@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from collections import deque
 import numpy as np
 import random
-from typing import Generic, Iterable, TypeVar
+from typing import Generic, Iterable, TypeVar, Union
 
 from tmai.agents.agent import Agent, RandomArrowsAgent
 from tmai.agents.DQN_agent import EpsilonGreedyDQN
@@ -16,8 +16,8 @@ class Transition:
     state: np.ndarray
     action: np.ndarray
     next_state: np.ndarray
-    reward: float
-    done: bool
+    reward: Union[float,list[float]]
+    done: Union[bool,list[bool]]
 
 Episode = list[Transition]
 
@@ -33,7 +33,7 @@ class Buffer(Generic[T]):
         self.memory.append(obj)
         
     def append_multiple(self, obj_list: list[T]):
-        for obj in episode:
+        for obj in obj_list:
             self.memory.append(obj)
 
     def sample(self, batch_size) -> Iterable[T]:
@@ -44,6 +44,23 @@ class Buffer(Generic[T]):
 
     def __len__(self):
         return len(self.memory)
+    
+class TransitionBuffer(Buffer[Transition]):
+    def __init__(self, capacity=100000):
+        super().__init__(capacity)
+        
+    def append_episode(self, episode:Episode):
+        self.append_multiple(episode)
+    
+    def get_batch(self, batch_size):
+        batch_of_transitions = self.sample(batch_size)
+        states = np.array([t.state for t in batch_of_transitions])
+        actions = np.array([t.action for t in batch_of_transitions])
+        next_states = np.array([t.next_state for t in batch_of_transitions])
+        rewards = np.array([t.reward for t in batch_of_transitions])
+        dones = np.array([t.done for t in batch_of_transitions])
+        
+        return Transition(states, actions, next_states, rewards, dones)
 
 
 def play_episode(agent:Agent, env:TrackmaniaEnv) -> Episode:
@@ -66,7 +83,9 @@ def play_episode(agent:Agent, env:TrackmaniaEnv) -> Episode:
 
 if __name__ == "__main__":
     env =  TrackmaniaEnv( action_space="arrows")
-    agent = EpsilonGreedyDQN(env.observation_space.shape[0])
+    agent = EpsilonGreedyDQN(env.observation_space.shape[0], "cuda")
     episode = play_episode(agent, env)
-    print(len(episode))
-    print(total_reward(episode))
+    buffer = TransitionBuffer()
+    buffer.append_episode(episode)
+    batch = buffer.get_batch(10)
+    print(batch)
