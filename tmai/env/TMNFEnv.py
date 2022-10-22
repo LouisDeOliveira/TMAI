@@ -1,5 +1,5 @@
 from typing import TypeVar
-
+import time
 import numpy as np
 from gym import Env
 from gym.spaces import Box, MultiBinary
@@ -90,7 +90,9 @@ class TrackmaniaEnv(Env):
         return commands
 
     def _restart_race(self):
-        self.input_manager.play_inputs([ArrowInput.DEL])
+        self.input_manager.press_key(ArrowInput.DEL)
+        time.sleep(0.1)
+        self.input_manager.release_key(ArrowInput.DEL)
 
     @property
     def state(self):
