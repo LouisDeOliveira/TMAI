@@ -5,6 +5,7 @@ import random
 from typing import Generic, Iterable, TypeVar
 
 from tmai.agents.agent import Agent, RandomArrowsAgent
+from tmai.agents.DQN_agent import EpsilonGreedyDQN
 from tmai.env.TMIClient import ThreadedClient
 from tmai.env.TMNFEnv import TrackmaniaEnv
 
@@ -16,6 +17,7 @@ class Transition:
     action: np.ndarray
     next_state: np.ndarray
     reward: float
+    done: bool
 
 Episode = list[Transition]
 
@@ -27,9 +29,12 @@ class Buffer(Generic[T]):
         self.capacity = capacity
         self.memory = deque([], maxlen=capacity)
 
-    def append(self, *args):
-        transition = T(*args)
-        self.memory.append(transition)
+    def append(self, obj: T):
+        self.memory.append(obj)
+        
+    def append_multiple(self, obj_list: list[T]):
+        for obj in episode:
+            self.memory.append(obj)
 
     def sample(self, batch_size) -> Iterable[T]:
         return random.sample(self.memory, batch_size)
@@ -52,7 +57,7 @@ def play_episode(agent:Agent, env:TrackmaniaEnv) -> Episode:
         action = agent.act(observation)
         print(action)
         observation, reward, done, info = env.step(action)
-        transition = Transition(prev_obs, action, observation, reward)
+        transition = Transition(prev_obs, action, observation, reward, done)
         episode.append(transition)
         step += 1
         env.render()
@@ -61,7 +66,7 @@ def play_episode(agent:Agent, env:TrackmaniaEnv) -> Episode:
 
 if __name__ == "__main__":
     env =  TrackmaniaEnv( action_space="arrows")
-    agent = RandomArrowsAgent(action_space = env.action_space)
-    while True:
-        episode = play_episode(agent, env)
-        print(len(episode))
+    agent = EpsilonGreedyDQN(env.observation_space.shape[0])
+    episode = play_episode(agent, env)
+    print(len(episode))
+    print(total_reward(episode))
