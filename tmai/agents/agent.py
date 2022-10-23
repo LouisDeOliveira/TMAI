@@ -15,7 +15,7 @@ class Agent(ABC):
 
 class RandomGamepadAgent(Agent):
     def act(self, observation):
-        return np.random.uniform(-1, 0, size=(2,))
+        return np.random.uniform(-1, 1, size=(2,))
 
 
 class RandomArrowsAgent(Agent):
