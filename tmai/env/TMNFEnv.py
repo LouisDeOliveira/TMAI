@@ -7,10 +7,12 @@ from gym.spaces import Box, MultiBinary
 from tmai.env.TMIClient import ThreadedClient
 from tmai.env.utils.GameCapture import GameViewer
 from tmai.env.utils.GameInteraction import ArrowInput, KeyboardInputManager, GamepadInputManager
+from tmai.env.utils.GameLaunch import GameLauncher
+
 
 ArrowsActionSpace = MultiBinary((4,))  # none up down right left
 ControllerActionSpace = Box(
-    low=-65536, high=65536, shape=(2,), dtype=np.int32
+    low=-1.0, high=1.0, shape=(2,), dtype=np.float32
 )  # gas and steer
 ActType = TypeVar("ActType")
 ObsType = TypeVar("ObsType")
@@ -31,15 +33,22 @@ class TrackmaniaEnv(Env):
         self.action_space = (
             ArrowsActionSpace if action_space == "arrows" else ControllerActionSpace
         )
-        print(self.action_space.sample())
         self.observation_space = Box(
             low=0.0, high=1.0, shape=(n_rays,), dtype=np.float32
         )
+        
         
         self.input_manager = (KeyboardInputManager() 
                               if action_space == "arrows" 
                               else GamepadInputManager())
 
+        game_launcher  = GameLauncher()
+        if not game_launcher.game_started:
+            game_launcher.start_game()
+            print("game started")
+            input("press enter when game is ready")
+            time.sleep(4)
+        
         self.viewer = GameViewer(n_rays=n_rays)
         self.simthread = ThreadedClient()
         self.total_reward = 0.0
@@ -109,7 +118,7 @@ class TrackmaniaEnv(Env):
         self.input_manager.release_key(ArrowInput.DEL)
     
     def _gamepad_restart(self):
-        pass
+        self.input_manager.press_right_shoulder()
 
     @property
     def state(self):
