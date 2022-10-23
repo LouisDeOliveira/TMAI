@@ -4,7 +4,7 @@ import win32gui
 import numpy as np
 from enum import Enum
 from tmai.env.utils.constants import GAME_WINDOW_NAME, GAME_WINDOW_NAME
-
+import vgamepad as vg
 
 class ArrowInput(Enum):
     UP = 0xC8
@@ -142,10 +142,65 @@ class KeyboardInputManager:
             self.release_key(ArrowInput.RIGHT)
 
 class GamepadInputManager:
-    pass
+    def __init__(self, window_name:str = GAME_WINDOW_NAME, wait_for_gamepad:int = 5) -> None:
+        self.gamepad = vg.VX360Gamepad()
+        self.window_name = window_name
+        self.hwnd = ctypes.windll.user32.FindWindowW(None, self.window_name)
+        win32gui.SetForegroundWindow(self.hwnd)
+        self.gamepad.press_button(button=vg.XUSB_BUTTON.XUSB_GAMEPAD_A)
+        self.gamepad.update()
+        time.sleep(wait_for_gamepad)
+        
+    def press_right_trigger(self, value:float):
+        """
+        value between 0 and 1
+        """
+        # print("pressing right trigger")
+        self.gamepad.right_trigger_float(value_float=value) 
+        self.gamepad.update()
+    
+    def press_left_trigger(self, value:float):
+        """
+        value between 0 and 1
+        """
+        # print("pressing left trigger")
+        self.gamepad.left_trigger_float(value_float=value) 
+        self.gamepad.update()
+        
+    def press_right_shoulder(self):
+        """
+        presses right shoulder button
+        """
+        # print("pressing right shoulder")
+        self.gamepad.press_button(vg.XUSB_BUTTON.XUSB_GAMEPAD_RIGHT_SHOULDER)
+        self.gamepad.update()
+        time.sleep(1.0)
+        self.gamepad.release_button(vg.XUSB_BUTTON.XUSB_GAMEPAD_RIGHT_SHOULDER)
+        self.gamepad.update()
+
+    def move_left_stick_x(self, value:float):
+        self.gamepad.left_joystick_float(x_value_float=value, y_value_float=0.0)
+    def play_gas(self, value:float):
+        """
+        value between -1 and 1
+        """
+        if value < 0:
+            self.press_right_trigger(0.0)
+            self.press_left_trigger(abs(value))
+        else:
+            self.press_left_trigger(0.0)
+            self.press_right_trigger(value)
+
+    def play_steer(self, value:float):
+        """
+        value between -1 and 1
+        """
+        self.move_left_stick_x(value)
 
 if __name__ == "__main__":
-    input_manager = KeyboardInputManager(input_duration=0.1)
-
+    gamepad_manager = GamepadInputManager()
+    gamepad_manager.press_right_shoulder()
+    
     for _ in range(100):
-        input_manager.play_inputs([ArrowInput.DEL])
+        gamepad_manager.play_gas(1.0)
+        gamepad_manager.play_steer(np.random.rand() * 2 - 1)
