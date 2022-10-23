@@ -8,6 +8,10 @@ from dataclasses import dataclass
 
 
 class Policy(nn.Module, Agent):
+    """
+    The policy or actor network is the one that takes the state as input 
+    and outputs the action to be taken.
+    """
     def __init__(self):
         super().__init__()
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, padding="same")
@@ -42,6 +46,10 @@ class Policy(nn.Module, Agent):
 
 
 class Value(nn.Module, Agent):
+    """
+    The value or critic network is the one that takes the state and action as input
+    and outputs the value of the state-action pair.
+    """
     def __init__(self):
         super().__init__()
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, padding="same")
@@ -54,7 +62,7 @@ class Value(nn.Module, Agent):
 
         self.maxpool = nn.MaxPool2d(2, 2)
 
-    def forward(self, x, y):
+    def forward(self, observation, action):
         x = self.maxpool(F.relu(self.conv1(x)))
         x = self.maxpool(F.relu(self.conv2(x)))
         x = F.relu(self.conv4(x))
