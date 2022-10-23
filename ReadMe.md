@@ -24,7 +24,7 @@ The input given to our agents can be either of these images or the array of dist
 - [x] Send controls to the game using windows api
 - [x] Get car status from TMInterface
 - [x] Implement arrow keys input simulation
-- [ ] Implement gamepad input simulation
+- [x] Implement gamepad input simulation
 - [x] Run TMInterface in separate thread to get data from the game more efficiently
 - [ ] Implement general training routines for most RL methods
    - [x] DQN with lidar inputs
@@ -34,6 +34,8 @@ The input given to our agents can be either of these images or the array of dist
 - [ ] WandB benchmarking tool and dashboard
 - [ ] (OPTIONAL) Look into implementing parallel envs by running multiple instances of the game
 - [ ] (OPTIONAL) Automate setup of the game
+   - [x] Game launched automatically after setting up virtual controller
+   - [ ] Fully automated setup up to race start
 
 
 # References
