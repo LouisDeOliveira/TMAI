@@ -6,7 +6,7 @@ from gym.spaces import Box, MultiBinary
 
 from tmai.env.TMIClient import ThreadedClient
 from tmai.env.utils.GameCapture import GameViewer
-from tmai.env.utils.GameInteraction import ArrowInput, KeyboardInputManager
+from tmai.env.utils.GameInteraction import ArrowInput, KeyboardInputManager, GamepadInputManager
 
 ArrowsActionSpace = MultiBinary((4,))  # none up down right left
 ControllerActionSpace = Box(
@@ -24,7 +24,7 @@ class TrackmaniaEnv(Env):
     """
     def __init__(
         self,
-        action_space: "str" = "arrows",
+        action_space: str = "arrows",
         n_rays: int = 16,
     ):
 
@@ -35,10 +35,13 @@ class TrackmaniaEnv(Env):
         self.observation_space = Box(
             low=0.0, high=1.0, shape=(n_rays,), dtype=np.float32
         )
+        
+        self.input_manager = (KeyboardInputManager() 
+                              if action_space == "arrows" 
+                              else GamepadInputManager())
 
         self.viewer = GameViewer(n_rays=n_rays)
         self.simthread = ThreadedClient()
-        self.input_manager = KeyboardInputManager()
         self.total_reward = 0.0
         self.n_steps = 0
         self.max_steps = 1000
@@ -47,7 +50,8 @@ class TrackmaniaEnv(Env):
 
     def step(self, action):
         self.last_action = action
-        self.input_manager.play_inputs_no_release(self.action_to_command(action))
+        #plays action 
+        self.action_to_command(action)
         done = (
             True
             if self.n_steps >= self.max_steps or self.total_reward < -300
@@ -83,16 +87,29 @@ class TrackmaniaEnv(Env):
 
     def _continuous_action_to_command(self, action):
         gas, steer = action
-        return [f"gas {gas}", f"steer {steer}"]
-
+        self.input_manager.play_gas(gas)
+        self.input_manager.play_steer(steer)
+        
     def _discrete_action_to_command(self, action):
         commands = ArrowInput.from_discrete_agent_out(action)
-        return commands
+        self.input_manager.play_inputs_no_release(commands)
+    
+    
 
     def _restart_race(self):
+        if isinstance(self.input_manager, KeyboardInputManager):
+            self._keyboard_restart()
+        else:
+            self._gamepad_restart()
+ 
+        
+    def _keyboard_restart(self):
         self.input_manager.press_key(ArrowInput.DEL)
         time.sleep(0.1)
         self.input_manager.release_key(ArrowInput.DEL)
+    
+    def _gamepad_restart(self):
+        pass
 
     @property
     def state(self):
