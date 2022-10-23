@@ -27,6 +27,8 @@ The input given to our agents can be either of these images or the array of dist
 - [ ] Implement gamepad input simulation
 - [x] Run TMInterface in separate thread to get data from the game more efficiently
 - [ ] Implement general training routines for most RL methods
+   - [x] DQN with lidar inputs
+   - [ ] DDPG with lidar inputs
 - [ ] Allow for online or offline training
 - [ ] High level agent factory for easy testing
 - [ ] WandB benchmarking tool and dashboard
