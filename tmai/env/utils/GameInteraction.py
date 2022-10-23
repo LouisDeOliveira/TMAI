@@ -89,14 +89,23 @@ class Input(ctypes.Structure):
     _fields_ = [("type", ctypes.c_ulong), ("ii", Input_I)]
 
 
+def refocus():
+    # refocus on game window decorator, not yet used    
+    def wrapper(func):
+        def inner(*args, **kwargs):
+            hwnd = win32gui.FindWindow(None, args[0].window_name)
+            win32gui.SetForegroundWindow(hwnd)
+            return func(*args, **kwargs)
+        return inner
+    
+    return wrapper
+
 class KeyboardInputManager:
     def __init__(
         self, input_duration: float = 0.05, window_name: str = GAME_WINDOW_NAME
     ) -> None:
         self.input_duration = input_duration
         self.window_name = window_name
-        self.hwnd = ctypes.windll.user32.FindWindowW(None, self.window_name)
-        win32gui.SetForegroundWindow(self.hwnd)
 
     def press_key(self, key: ArrowInput):
         extra = ctypes.c_ulong(0)
@@ -145,12 +154,7 @@ class GamepadInputManager:
     def __init__(self, window_name:str = GAME_WINDOW_NAME, wait_for_gamepad:int = 5) -> None:
         self.gamepad = vg.VX360Gamepad()
         self.window_name = window_name
-        self.hwnd = ctypes.windll.user32.FindWindowW(None, self.window_name)
-        win32gui.SetForegroundWindow(self.hwnd)
-        self.gamepad.press_button(button=vg.XUSB_BUTTON.XUSB_GAMEPAD_A)
-        self.gamepad.update()
-        time.sleep(wait_for_gamepad)
-        
+
     def press_right_trigger(self, value:float):
         """
         value between 0 and 1
@@ -166,7 +170,7 @@ class GamepadInputManager:
         # print("pressing left trigger")
         self.gamepad.left_trigger_float(value_float=value) 
         self.gamepad.update()
-        
+    
     def press_right_shoulder(self):
         """
         presses right shoulder button
@@ -180,6 +184,7 @@ class GamepadInputManager:
 
     def move_left_stick_x(self, value:float):
         self.gamepad.left_joystick_float(x_value_float=value, y_value_float=0.0)
+   
     def play_gas(self, value:float):
         """
         value between -1 and 1
@@ -196,11 +201,23 @@ class GamepadInputManager:
         value between -1 and 1
         """
         self.move_left_stick_x(value)
+        
+    def wake_controller(self):
+        self.gamepad.press_button(vg.XUSB_BUTTON.XUSB_GAMEPAD_A)
+        self.gamepad.update()
+        time.sleep(1.0)
+        self.gamepad.release_button(vg.XUSB_BUTTON.XUSB_GAMEPAD_A)
+        self.gamepad.update()
+        time.sleep(1.0)
+        self.gamepad.reset()
 
 if __name__ == "__main__":
     gamepad_manager = GamepadInputManager()
     gamepad_manager.press_right_shoulder()
+    print("setup done")
     
-    for _ in range(100):
+    while True:
+        time.sleep(0.1)
         gamepad_manager.play_gas(1.0)
-        gamepad_manager.play_steer(np.random.rand() * 2 - 1)
+        time.sleep(0.1)
+        gamepad_manager.play_gas(0.0)
