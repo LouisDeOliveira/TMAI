@@ -89,7 +89,7 @@ class Input(ctypes.Structure):
     _fields_ = [("type", ctypes.c_ulong), ("ii", Input_I)]
 
 
-class InputManager:
+class KeyboardInputManager:
     def __init__(
         self, input_duration: float = 0.05, window_name: str = GAME_WINDOW_NAME
     ) -> None:
@@ -141,9 +141,11 @@ class InputManager:
         else:
             self.release_key(ArrowInput.RIGHT)
 
+class GamepadInputManager:
+    pass
 
 if __name__ == "__main__":
-    input_manager = InputManager(input_duration=0.1)
+    input_manager = KeyboardInputManager(input_duration=0.1)
 
     for _ in range(100):
         input_manager.play_inputs([ArrowInput.DEL])

@@ -6,7 +6,7 @@ from gym.spaces import Box, MultiBinary
 
 from tmai.env.TMIClient import ThreadedClient
 from tmai.env.utils.GameCapture import GameViewer
-from tmai.env.utils.GameInteraction import ArrowInput, InputManager
+from tmai.env.utils.GameInteraction import ArrowInput, KeyboardInputManager
 
 ArrowsActionSpace = MultiBinary((4,))  # none up down right left
 ControllerActionSpace = Box(
@@ -38,7 +38,7 @@ class TrackmaniaEnv(Env):
 
         self.viewer = GameViewer(n_rays=n_rays)
         self.simthread = ThreadedClient()
-        self.input_manager = InputManager()
+        self.input_manager = KeyboardInputManager()
         self.total_reward = 0.0
         self.n_steps = 0
         self.max_steps = 1000
