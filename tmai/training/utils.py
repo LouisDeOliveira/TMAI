@@ -4,7 +4,7 @@ import numpy as np
 import random
 from typing import Generic, Iterable, TypeVar, Union
 
-from tmai.agents.agent import Agent, RandomArrowsAgent
+from tmai.agents.agent import Agent, RandomArrowsAgent, RandomGamepadAgent
 from tmai.agents.DQN_agent import EpsilonGreedyDQN
 from tmai.env.TMIClient import ThreadedClient
 from tmai.env.TMNFEnv import TrackmaniaEnv
@@ -63,8 +63,7 @@ class TransitionBuffer(Buffer[Transition]):
         return Transition(states, actions, next_states, rewards, dones)
 
 
-def play_episode(agent:Agent, env:TrackmaniaEnv) -> Episode:
-    env = TrackmaniaEnv(action_space="arrows")
+def play_episode(agent:Agent, env:TrackmaniaEnv, render = False) -> Episode:
     episode = []
     observation = env.reset()
     done = False
@@ -77,15 +76,13 @@ def play_episode(agent:Agent, env:TrackmaniaEnv) -> Episode:
         transition = Transition(prev_obs, action, observation, reward, done)
         episode.append(transition)
         step += 1
-        env.render()
+        if render:
+            env.render()
 
     return episode
 
 if __name__ == "__main__":
-    env =  TrackmaniaEnv( action_space="arrows")
-    agent = EpsilonGreedyDQN(env.observation_space.shape[0], "cuda")
-    episode = play_episode(agent, env)
-    buffer = TransitionBuffer()
-    buffer.append_episode(episode)
-    batch = buffer.get_batch(10)
-    print(batch)
+    env =  TrackmaniaEnv(action_space="gamepad")
+    agent = RandomGamepadAgent()
+    while True:
+        episode = play_episode(agent, env)

@@ -13,6 +13,9 @@ class Agent(ABC):
     def act(self, observation: Observation) -> Action:
         raise NotImplementedError
 
+class RandomGamepadAgent(Agent):
+    def act(self, observation):
+        return np.random.uniform(-1, 1, size=(2,))
 
 
 class RandomArrowsAgent(Agent):

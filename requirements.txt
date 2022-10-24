@@ -5,4 +5,5 @@ torchvision
 gym
 opencv-python
 mss
-pywin23
+pywin32
+vgamepad
