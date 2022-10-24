@@ -1,86 +1,46 @@
 import torch
 import torch.nn as nn
 import torch.functional as F
-import torchvision.transforms as Transforms
 import numpy as np
 from agents.agent import Agent
 from dataclasses import dataclass
 
 
-class Policy(nn.Module, Agent):
+class Policy(nn.Module):
     """
     The policy or actor network is the one that takes the state as input 
     and outputs the action to be taken.
     """
-    def __init__(self):
+    def __init__(self, input_size, output_size, hidden_size):
         super().__init__()
-        self.conv1 = nn.Conv2d(3, 16, kernel_size=3, padding="same")
-        self.conv2 = nn.Conv2d(16, 32, kernel_size=3, padding="same")
-        self.conv4 = nn.Conv2d(32, 1, kernel_size=1, padding="same")
-        self.avgpool = nn.AvgPool2d(kernel_size=2)
-
-        self.fc1 = nn.Linear(1024, 128)
-        self.fc2 = nn.Linear(128, 2)
+        self.fc1 = nn.Linear(input_size, hidden_size)
+        self.fc2 = nn.Linear(hidden_size, output_size)
         self.out = nn.Tanh()
 
-        self.maxpool = nn.MaxPool2d(2, 2)
-
     def forward(self, x):
-        x = self.maxpool(F.relu(self.conv1(x)))
-        x = self.maxpool(F.relu(self.conv2(x)))
-        x = F.relu(self.conv4(x))
-        x = x.view(-1, 1024)
         x = F.relu(self.fc1(x))
-        x = self.out(self.fc2(x))
-
+        x = self.fc2(x)
+        x = self.out(x)
         return x
 
-    def act(self, x):
-
-        x = Transforms.ToTensor()(x).unsqueeze(0).float()
-        x = torch.Tensor(x)
-        x = self.forward(x)
-        x = x.squeeze(0).detach().numpy()
-
-        return x
-
-
-class Value(nn.Module, Agent):
+class Value(nn.Module):
     """
     The value or critic network is the one that takes the state and action as input
     and outputs the value of the state-action pair.
     """
-    def __init__(self):
-        super().__init__()
-        self.conv1 = nn.Conv2d(3, 16, kernel_size=3, padding="same")
-        self.conv2 = nn.Conv2d(16, 32, kernel_size=3, padding="same")
-        self.conv4 = nn.Conv2d(32, 1, kernel_size=1, padding="same")
-        self.avgpool = nn.AvgPool2d(kernel_size=2)
+    def __init__(self, input_size, action_size, hidden_size, output_size):
+       super().__init__()
+       
+       self.fc1 = nn.Linear(input_size + action_size, hidden_size)
+       self.fc2 = nn.Linear(hidden_size, output_size)
 
-        self.fc1 = nn.Linear(1026, 128)
-        self.fc2 = nn.Linear(128, 1)
-
-        self.maxpool = nn.MaxPool2d(2, 2)
 
     def forward(self, observation, action):
-        x = self.maxpool(F.relu(self.conv1(x)))
-        x = self.maxpool(F.relu(self.conv2(x)))
-        x = F.relu(self.conv4(x))
-        x = x.view(-1, 1024)
-        z = torch.cat([x, y], 1)
-        z = F.relu(self.fc1(z))
-        z = self.fc2(z)
-        return z
+        x = torch.cat([observation, action], dim=1)
+        x = F.relu(self.fc1(x))
+        x = self.fc2(x)
 
-    def act(self, obs):
-        x, y = obs
-        x = Transforms.ToTensor()(x).unsqueeze(0).float()
-        y = Transforms.ToTensor()(y).unsqueeze(0).float()
-        z = self.forward(x, y)
-        z = z.squeeze(0).detach().numpy()
-
-        return z
-
+        return x
 
 class OUActionNoise:
     def __init__(
@@ -126,3 +86,27 @@ class OUActionNoise:
         self.x_prev = x
         self.num_steps += 1
         return x
+
+class DDPG_agent:
+    
+    def __init__(
+        self, 
+        observation_size,
+        action_size, 
+        hidden_size,
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        ) -> None:
+        self.device = device
+        
+        self.actor_policy = Policy(observation_size, action_size, hidden_size)
+        self.target_policy = Policy(observation_size, action_size, hidden_size)
+        
+        self.critic_value = Value(observation_size, action_size, hidden_size, 1)
+        self.target_value = Value(observation_size, action_size, hidden_size, 1)
+      
+        self.noise = OUActionNoise(size=action_size)  
+    
+    def act(self, observation):
+        observation = torch.FloatTensor(observation)
+        action = self.actor_policy(observation) + torch.FloatTensor(self.noise.sample(), device=self.device)
+        return action.detach().cpu().numpy()
