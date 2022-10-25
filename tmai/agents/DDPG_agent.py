@@ -98,15 +98,11 @@ class DDPG_agent:
         ) -> None:
         self.device = device
         
-        self.actor_policy = Policy(observation_size, action_size, hidden_size)
-        self.target_policy = Policy(observation_size, action_size, hidden_size)
-        
-        self.critic_value = Value(observation_size, action_size, hidden_size, 1)
-        self.target_value = Value(observation_size, action_size, hidden_size, 1)
-      
+        self.policy = Policy(observation_size, action_size, hidden_size).to(self.device)        
+        self.value = Value(observation_size, action_size, hidden_size, 1).to(self.device)      
         self.noise = OUActionNoise(size=action_size)  
     
     def act(self, observation):
-        observation = torch.FloatTensor(observation)
+        observation = torch.FloatTensor(observation, device = self.device)
         action = self.actor_policy(observation) + torch.FloatTensor(self.noise.sample(), device=self.device)
         return action.detach().cpu().numpy()
