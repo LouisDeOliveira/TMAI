@@ -1,8 +1,7 @@
 import torch
 import torch.nn as nn
-import torch.functional as F
 import numpy as np
-from agents.agent import Agent
+from tmai.agents.agent import Agent
 from dataclasses import dataclass
 
 
@@ -18,7 +17,7 @@ class Policy(nn.Module):
         self.out = nn.Tanh()
 
     def forward(self, x):
-        x = F.relu(self.fc1(x))
+        x = nn.ReLU()(self.fc1(x))
         x = self.fc2(x)
         x = self.out(x)
         return x
@@ -37,7 +36,7 @@ class Value(nn.Module):
 
     def forward(self, observation, action):
         x = torch.cat([observation, action], dim=1)
-        x = F.relu(self.fc1(x))
+        x = nn.ReLU()(self.fc1(x))
         x = self.fc2(x)
 
         return x
@@ -47,7 +46,7 @@ class OUActionNoise:
         self,
         theta=0.3,
         mu=0.0,
-        sigma=0.4,
+        sigma=0.9,
         dt=1e-2,
         x0=None,
         size=1,
@@ -87,7 +86,7 @@ class OUActionNoise:
         self.num_steps += 1
         return x
 
-class DDPG_agent:
+class DDPG_agent(Agent):
     
     def __init__(
         self, 
@@ -103,6 +102,9 @@ class DDPG_agent:
         self.noise = OUActionNoise(size=action_size)  
     
     def act(self, observation):
-        observation = torch.FloatTensor(observation, device = self.device)
-        action = self.actor_policy(observation) + torch.FloatTensor(self.noise.sample(), device=self.device)
-        return action.detach().cpu().numpy()
+        observation = torch.tensor(observation, device = self.device, dtype = torch.float)
+        action = self.policy(observation) + torch.tensor(self.noise.sample(), device=self.device, dtype=torch.float)
+        action =  action.detach().cpu().numpy().clip(-1, 1)
+        action[0] = abs(action[0])
+        
+        return action
