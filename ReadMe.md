@@ -49,6 +49,7 @@ The game controller is simulated using VGamepad, allowing us to convert an agent
 - [ ] Allow for online or offline training
 - [ ] High level agent factory for easy testing
 - [ ] WandB benchmarking tool and dashboard
+- [ ] Main script and argument parsing
 - [ ] (OPTIONAL) Look into implementing parallel envs by running multiple instances of the game
 - [ ] (OPTIONAL) Automate setup of the game
   - [x] Game launched automatically after setting up virtual controller
