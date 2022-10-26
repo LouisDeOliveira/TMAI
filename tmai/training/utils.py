@@ -63,14 +63,17 @@ class TransitionBuffer(Buffer[Transition]):
         return Transition(states, actions, next_states, rewards, dones)
 
 
-def play_episode(agent:Agent, env:TrackmaniaEnv, render = False) -> Episode:
+def play_episode(agent:Agent, env:TrackmaniaEnv, render = False, act_value = None) -> Episode:
     episode = []
     observation = env.reset()
     done = False
     step = 0
     while not done:
         prev_obs = observation
-        action = agent.act(observation)
+        if act_value is not None:
+            action = act_value()
+        else:
+            action = agent.act(observation)
         print(action)
         observation, reward, done, info = env.step(action)
         transition = Transition(prev_obs, action, observation, reward, done)
