@@ -44,7 +44,7 @@ class GameViewer:
         """
         Shows the rays of the frame
         """
-        rays = self.get_rays(frame, keep_horizontal=False)
+        rays, _ = self.get_rays(frame, keep_horizontal=False)
         ref_point = (len(frame[0]) // 2, len(frame) - 1)
         for ray in rays:
             cv2.line(frame, ref_point, tuple(ray), (255, 0, 0), 1)
@@ -72,26 +72,32 @@ class GameViewer:
             cur_y -= dy
 
         return [int(cur_x), int(cur_y)]
+    
+    def _scaling_func(self, angle):
+        return (1+3*np.sin(angle))/4
 
-    def get_distance(self, point, ref_size, ref_point=(64, 127)):
-        return np.linalg.norm(np.array(point) - np.array(ref_point), 2) / ref_size
+    def get_distance(self, point, ref_size, ref_point=(64, 127), angle=0):
+        return self._scaling_func(angle)*np.linalg.norm(np.array(point) - np.array(ref_point), 2) / ref_size
 
     def get_rays(self, frame, keep_horizontal=True):
         """
         Returns the rays of the frame
         """
         rays = []
+        angles = []
         iterator = range(self.n_rays) if keep_horizontal else range(1, self.n_rays - 1)
         for i in iterator:
-            rays.append(self.find_end(i * np.pi / (self.n_rays - 1), frame))
-        return rays
+            angle = i * np.pi / (self.n_rays - 1)
+            rays.append(self.find_end(angle, frame))
+            angles.append(angle)
+        return rays, angles
 
     def get_obs(self):
         processed_img = self.get_frame()
-        ref_size = np.hypot(processed_img.shape[0], processed_img.shape[1])
-        rays = self.get_rays(processed_img)
+        ref_size = np.hypot(processed_img.shape[0], processed_img.shape[1])/2
+        rays, angles = self.get_rays(processed_img)
         ref_point = (len(processed_img[0]) // 2, len(processed_img) - 1)
-        distances = [self.get_distance(ray, ref_size, ref_point) for ray in rays]
+        distances = [self.get_distance(ray, ref_size, ref_point, angle) for ray, angle in zip(rays, angles)]
 
         return np.array(distances).astype(np.float32)
 
@@ -143,6 +149,9 @@ class GameViewer:
                     (512, 192),
                 ),
             )
+            if it%20==0:
+                obs = self.get_obs()
+                print(min(obs))
             if (cv2.waitKey(1) & 0xFF) == ord("q"):
 
                 cv2.destroyAllWindows()
