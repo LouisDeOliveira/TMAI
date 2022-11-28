@@ -46,6 +46,7 @@ The game controller is simulated using VGamepad, allowing us to convert an agent
 - [ ] Implement general training routines for most RL methods
   - [x] DQN with lidar inputs
   - [ ] DDPG with lidar inputs
+  - [ ] PPO with lidar inputs
 - [ ] Allow for online or offline training
 - [ ] High level agent factory for easy testing
 - [ ] WandB benchmarking tool and dashboard
