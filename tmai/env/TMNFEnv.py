@@ -16,7 +16,7 @@ from tmai.env.utils.GameLaunch import GameLauncher
 
 ArrowsActionSpace = MultiBinary((4,))  # none up down right left
 ControllerActionSpace = Box(
-    low=-1.0, high=1.0, shape=(2,), dtype=np.float32
+    low=np.array([0.0, -1.0]), high=np.array([1.0, 1.0]), shape=(2,), dtype=np.float32
 )  # gas and steer
 ActType = TypeVar("ActType")
 ObsType = TypeVar("ObsType")
