@@ -1,5 +1,6 @@
-from typing import TypeVar
 import time
+from typing import TypeVar
+
 import numpy as np
 from gym import Env
 from gym.spaces import Box, MultiBinary
@@ -8,11 +9,10 @@ from tmai.env.TMIClient import ThreadedClient
 from tmai.env.utils.GameCapture import GameViewer
 from tmai.env.utils.GameInteraction import (
     ArrowInput,
-    KeyboardInputManager,
     GamepadInputManager,
+    KeyboardInputManager,
 )
 from tmai.env.utils.GameLaunch import GameLauncher
-
 
 ArrowsActionSpace = MultiBinary((4,))  # none up down right left
 ControllerActionSpace = Box(
