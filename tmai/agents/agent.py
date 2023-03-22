@@ -4,13 +4,12 @@ import numpy as np
 from abc import ABC, abstractmethod
 from typing import TypeVar
 
-Action = TypeVar("Action")
-Observation = TypeVar("Observation")
+
 
 
 class Agent(ABC):
     @abstractmethod
-    def act(self, observation: Observation) -> Action:
+    def act(self, observation):
         raise NotImplementedError
 
 class RandomGamepadAgent(Agent):
@@ -21,7 +20,7 @@ class RandomGamepadAgent(Agent):
 class RandomArrowsAgent(Agent):
     def __init__(self, action_space):
         self.action_space = action_space
-    def act(self, observation: Observation) -> Action:
+    def act(self, observation):
         action = self.action_space.sample()
         action[0] = 1
         action[1] = 0

@@ -2,6 +2,7 @@ import ctypes
 import time
 import win32gui
 import numpy as np
+from typing import List
 from enum import Enum
 from tmai.env.utils.constants import GAME_WINDOW_NAME, GAME_WINDOW_NAME
 import vgamepad as vg
@@ -13,6 +14,7 @@ class ArrowInput(Enum):
     RIGHT = 0xCD
     DEL = 0xD3
 
+    @staticmethod
     def from_continuous_agent_out(vec: np.ndarray) -> list["ArrowInput"]:
         """
         Vector of size 2, gas and steer converted to discrete inputs
@@ -31,6 +33,7 @@ class ArrowInput(Enum):
 
         return inputs
     
+    @staticmethod
     def from_discrete_agent_out(vec: np.ndarray) -> list["ArrowInput"]:
         "binary inpuit vector, for each action, 1 if pressed, 0 if not"
         inputs = []
@@ -121,7 +124,7 @@ class KeyboardInputManager:
         x = Input(ctypes.c_ulong(1), ii_)
         ctypes.windll.user32.SendInput(1, ctypes.pointer(x), ctypes.sizeof(x))
 
-    def play_inputs(self, inputs: list[ArrowInput]):
+    def play_inputs(self, inputs: List[ArrowInput]):
         for input_ in inputs:
             if input_ is None:
                 continue
@@ -129,7 +132,7 @@ class KeyboardInputManager:
             time.sleep(self.input_duration)
             self.release_key(input_)
 
-    def play_inputs_no_release(self, inputs: ArrowInput):
+    def play_inputs_no_release(self, inputs: List[ArrowInput]):
         if ArrowInput.UP in inputs:
             self.press_key(ArrowInput.UP)
         else:

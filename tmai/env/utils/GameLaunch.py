@@ -16,9 +16,9 @@ class GameLauncher:
         self.game_path = game_path
         self.game_dir = game_dir
         self.game_window_name = game_window_name
-        self.game_thread = Thread(target=self.game_thread, daemon=False)
+        self.game_thread = Thread(target=self.start_game_process, daemon=False)
         
-    def game_thread(self):
+    def start_game_process(self):
         subprocess.Popen(self.game_path, cwd=self.game_dir)
 
         while True:

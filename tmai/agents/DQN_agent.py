@@ -53,7 +53,9 @@ class EpsilonGreedyDQN(Agent):
     
 
 if __name__ == "__main__":
-    agent = EpsilonGreedyDQN()
+    input_size = 17
+    device = "cuda"
+    agent = EpsilonGreedyDQN(input_size, device)
     
     for step in range(10):
         print(agent.epsilon())

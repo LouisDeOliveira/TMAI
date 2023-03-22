@@ -16,13 +16,13 @@ class Transition:
     state: np.ndarray
     action: np.ndarray
     next_state: np.ndarray
-    reward: Union[float,list[float]]
-    done: Union[bool,list[bool]]
+    reward: float
+    done: bool
 
 Episode = list[Transition]
 
 def total_reward(episode:Episode) -> float:
-    return sum(t.reward for t in episode)
+    return sum([t.reward for t in episode])
 
 class Buffer(Generic[T]):
     def __init__(self, capacity=100000):
