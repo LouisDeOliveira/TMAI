@@ -2,7 +2,6 @@ from abc import ABC
 import numpy as np
 
 from abc import ABC, abstractmethod
-from typing import TypeVar
 
 
 class Agent(ABC):

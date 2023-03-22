@@ -2,11 +2,9 @@ from dataclasses import dataclass
 from collections import deque
 import numpy as np
 import random
-from typing import Generic, Iterable, TypeVar, Union
+from typing import Generic, Iterable, TypeVar
 
-from tmai.agents.agent import Agent, RandomArrowsAgent, RandomGamepadAgent
-from tmai.agents.DQN_agent import EpsilonGreedyDQN
-from tmai.env.TMIClient import ThreadedClient
+from tmai.agents.agent import Agent, RandomGamepadAgent
 from tmai.env.TMNFEnv import TrackmaniaEnv
 
 T = TypeVar("T")

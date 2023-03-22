@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from tmai.env.TMNFEnv import TrackmaniaEnv
-from tmai.training.utils import Buffer, Transition, Episode, total_reward, play_episode
+from tmai.training.utils import Buffer, Transition, total_reward, play_episode
 from tmai.agents.DDPG_agent import DDPG_agent
 import numpy as np
 

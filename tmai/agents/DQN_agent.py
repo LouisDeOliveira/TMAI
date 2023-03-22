@@ -1,4 +1,3 @@
-from tkinter import X
 import numpy as np
 import torch
 import torch.nn as nn
