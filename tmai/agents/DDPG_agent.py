@@ -7,9 +7,10 @@ from dataclasses import dataclass
 
 class Policy(nn.Module):
     """
-    The policy or actor network is the one that takes the state as input 
+    The policy or actor network is the one that takes the state as input
     and outputs the action to be taken.
     """
+
     def __init__(self, input_size, output_size, hidden_size):
         super().__init__()
         self.fc1 = nn.Linear(input_size, hidden_size)
@@ -23,17 +24,18 @@ class Policy(nn.Module):
         x = self.out(x)
         return x
 
+
 class Value(nn.Module):
     """
     The value or critic network is the one that takes the state and action as input
     and outputs the value of the state-action pair.
     """
-    def __init__(self, input_size, action_size, hidden_size, output_size):
-       super().__init__()
-       
-       self.fc1 = nn.Linear(input_size + action_size, hidden_size)
-       self.fc2 = nn.Linear(hidden_size, output_size)
 
+    def __init__(self, input_size, action_size, hidden_size, output_size):
+        super().__init__()
+
+        self.fc1 = nn.Linear(input_size + action_size, hidden_size)
+        self.fc2 = nn.Linear(hidden_size, output_size)
 
     def forward(self, observation, action):
         x = torch.cat([observation, action], dim=1)
@@ -42,6 +44,7 @@ class Value(nn.Module):
         x = self.fc2(x)
 
         return x
+
 
 class OUActionNoise:
     def __init__(
@@ -88,25 +91,29 @@ class OUActionNoise:
         self.num_steps += 1
         return x
 
+
 class DDPG_agent(Agent):
-    
     def __init__(
-        self, 
+        self,
         observation_size,
-        action_size, 
+        action_size,
         hidden_size,
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        ) -> None:
+        device=torch.device("cuda" if torch.cuda.is_available() else "cpu"),
+    ) -> None:
         self.device = device
-        
-        self.policy = Policy(observation_size, action_size, hidden_size).to(self.device)        
-        self.value = Value(observation_size, action_size, hidden_size, 1).to(self.device)      
-        self.noise = OUActionNoise(size=action_size)  
-    
+
+        self.policy = Policy(observation_size, action_size, hidden_size).to(self.device)
+        self.value = Value(observation_size, action_size, hidden_size, 1).to(
+            self.device
+        )
+        self.noise = OUActionNoise(size=action_size)
+
     def act(self, observation):
-        observation = torch.tensor(observation, device = self.device, dtype = torch.float)
-        action = self.policy(observation) + torch.tensor(self.noise.sample(), device=self.device, dtype=torch.float)
-        action =  action.detach().cpu().numpy().clip(-1, 1)
+        observation = torch.tensor(observation, device=self.device, dtype=torch.float)
+        action = self.policy(observation) + torch.tensor(
+            self.noise.sample(), device=self.device, dtype=torch.float
+        )
+        action = action.detach().cpu().numpy().clip(-1, 1)
         action[0] = abs(action[0])
-        
+
         return action

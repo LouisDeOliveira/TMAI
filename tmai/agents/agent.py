@@ -5,12 +5,11 @@ from abc import ABC, abstractmethod
 from typing import TypeVar
 
 
-
-
 class Agent(ABC):
     @abstractmethod
     def act(self, observation):
         raise NotImplementedError
+
 
 class RandomGamepadAgent(Agent):
     def act(self, observation):
@@ -20,9 +19,10 @@ class RandomGamepadAgent(Agent):
 class RandomArrowsAgent(Agent):
     def __init__(self, action_space):
         self.action_space = action_space
+
     def act(self, observation):
         action = self.action_space.sample()
         action[0] = 1
         action[1] = 0
-        
+
         return action

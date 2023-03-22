@@ -4,8 +4,9 @@ import win32gui
 import numpy as np
 from typing import List
 from enum import Enum
-from tmai.env.utils.constants import GAME_WINDOW_NAME, GAME_WINDOW_NAME
+from tmai.env.utils.constants import GAME_WINDOW_NAME
 import vgamepad as vg
+
 
 class ArrowInput(Enum):
     UP = 0xC8
@@ -32,14 +33,14 @@ class ArrowInput(Enum):
             inputs.append(ArrowInput.LEFT)
 
         return inputs
-    
+
     @staticmethod
     def from_discrete_agent_out(vec: np.ndarray) -> list["ArrowInput"]:
         "binary inpuit vector, for each action, 1 if pressed, 0 if not"
         inputs = []
         if vec[0] == 1:
             inputs.append(ArrowInput.UP)
-            
+
         elif vec[1] == 1:
             inputs.append(ArrowInput.DOWN)
 
@@ -93,15 +94,17 @@ class Input(ctypes.Structure):
 
 
 def refocus():
-    # refocus on game window decorator, not yet used    
+    # refocus on game window decorator, not yet used
     def wrapper(func):
         def inner(*args, **kwargs):
             hwnd = win32gui.FindWindow(None, args[0].window_name)
             win32gui.SetForegroundWindow(hwnd)
             return func(*args, **kwargs)
+
         return inner
-    
+
     return wrapper
+
 
 class KeyboardInputManager:
     def __init__(
@@ -153,27 +156,28 @@ class KeyboardInputManager:
         else:
             self.release_key(ArrowInput.RIGHT)
 
+
 class GamepadInputManager:
-    def __init__(self, window_name:str = GAME_WINDOW_NAME, wait_for_gamepad:int = 5) -> None:
+    def __init__(self, window_name: str = GAME_WINDOW_NAME) -> None:
         self.gamepad = vg.VX360Gamepad()
         self.window_name = window_name
 
-    def press_right_trigger(self, value:float):
+    def press_right_trigger(self, value: float):
         """
         value between 0 and 1
         """
         # print("pressing right trigger")
-        self.gamepad.right_trigger_float(value_float=value) 
+        self.gamepad.right_trigger_float(value_float=value)
         self.gamepad.update()
-    
-    def press_left_trigger(self, value:float):
+
+    def press_left_trigger(self, value: float):
         """
         value between 0 and 1
         """
         # print("pressing left trigger")
-        self.gamepad.left_trigger_float(value_float=value) 
+        self.gamepad.left_trigger_float(value_float=value)
         self.gamepad.update()
-    
+
     def press_right_shoulder(self):
         """
         presses right shoulder button
@@ -185,10 +189,10 @@ class GamepadInputManager:
         self.gamepad.release_button(vg.XUSB_BUTTON.XUSB_GAMEPAD_RIGHT_SHOULDER)
         self.gamepad.update()
 
-    def move_left_stick_x(self, value:float):
+    def move_left_stick_x(self, value: float):
         self.gamepad.left_joystick_float(x_value_float=value, y_value_float=0.0)
-   
-    def play_gas(self, value:float):
+
+    def play_gas(self, value: float):
         """
         value between -1 and 1
         """
@@ -199,12 +203,12 @@ class GamepadInputManager:
             self.press_left_trigger(0.0)
             self.press_right_trigger(value)
 
-    def play_steer(self, value:float):
+    def play_steer(self, value: float):
         """
         value between -1 and 1
         """
         self.move_left_stick_x(value)
-        
+
     def wake_controller(self):
         self.gamepad.press_button(vg.XUSB_BUTTON.XUSB_GAMEPAD_A)
         self.gamepad.update()
@@ -214,11 +218,12 @@ class GamepadInputManager:
         time.sleep(1.0)
         self.gamepad.reset()
 
+
 if __name__ == "__main__":
     gamepad_manager = GamepadInputManager()
     gamepad_manager.press_right_shoulder()
     print("setup done")
-    
+
     while True:
         time.sleep(0.1)
         gamepad_manager.play_gas(1.0)

@@ -17,7 +17,6 @@ def getWindowGeometry(name: str) -> tuple:
 
 class GameViewer:
     def __init__(self, n_rays: int = 16) -> None:
-
         self.window_name = GAME_WINDOW_NAME
         self.sct = mss()
         self.n_rays = n_rays
@@ -72,12 +71,16 @@ class GameViewer:
             cur_y -= dy
 
         return [int(cur_x), int(cur_y)]
-    
+
     def _scaling_func(self, angle):
-        return (1+3*np.sin(angle))/4
+        return (1 + 3 * np.sin(angle)) / 4
 
     def get_distance(self, point, ref_size, ref_point=(64, 127), angle=0):
-        return self._scaling_func(angle)*np.linalg.norm(np.array(point) - np.array(ref_point), 2) / ref_size
+        return (
+            self._scaling_func(angle)
+            * np.linalg.norm(np.array(point) - np.array(ref_point), 2)
+            / ref_size
+        )
 
     def get_rays(self, frame, keep_horizontal=True):
         """
@@ -94,10 +97,13 @@ class GameViewer:
 
     def get_obs(self):
         processed_img = self.get_frame()
-        ref_size = np.hypot(processed_img.shape[0], processed_img.shape[1])/2
+        ref_size = np.hypot(processed_img.shape[0], processed_img.shape[1]) / 2
         rays, angles = self.get_rays(processed_img)
         ref_point = (len(processed_img[0]) // 2, len(processed_img) - 1)
-        distances = [self.get_distance(ray, ref_size, ref_point, angle) for ray, angle in zip(rays, angles)]
+        distances = [
+            self.get_distance(ray, ref_size, ref_point, angle)
+            for ray, angle in zip(rays, angles)
+        ]
 
         return np.array(distances).astype(np.float32)
 
@@ -109,7 +115,8 @@ class GameViewer:
         Pulls a frame from the game and processes it
 
         Args:
-            size (tuple, optional): size to resize the screenshot to. Defaults to (256, 256).
+            size (tuple, optional): size to resize the screenshot to.
+            Defaults to (256, 256).
 
         Returns:
             np.ndarray: processed frame
@@ -149,11 +156,10 @@ class GameViewer:
                     (512, 192),
                 ),
             )
-            if it%20==0:
+            if it % 20 == 0:
                 obs = self.get_obs()
                 print(min(obs))
             if (cv2.waitKey(1) & 0xFF) == ord("q"):
-
                 cv2.destroyAllWindows()
                 break
 
