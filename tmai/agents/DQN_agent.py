@@ -56,4 +56,4 @@ if __name__ == "__main__":
     agent = EpsilonGreedyDQN()
     
     for step in range(10):
-        print(agent.epsilon(step))
+        print(agent.epsilon())

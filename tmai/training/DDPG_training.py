@@ -21,18 +21,18 @@ class DDPG_trainer:
         self.critic_lr = 0.002
         self.tau = 0.05
         
-        self.env = TrackmaniaEnv(action_space="controller")
+        self.env = TrackmaniaEnv(action_space="controller", n_rays = 64)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
         self.model = DDPG_agent(
             observation_size=self.env.observation_space.shape[0],
             action_size=self.env.action_space.shape[0], 
-            hidden_size=64)
+            hidden_size=256)
         
         self.target = DDPG_agent(
             observation_size=self.env.observation_space.shape[0],
             action_size=self.env.action_space.shape[0], 
-            hidden_size=64)
+            hidden_size=256)
         
         self.actor_optimizer = optim.Adam(self.model.policy.parameters(), lr=self.actor_lr)
         self.critic_optimizer = optim.Adam(self.model.value.parameters(), lr=self.critic_lr)

@@ -18,6 +18,7 @@ class Policy(nn.Module):
 
     def forward(self, x):
         x = nn.ReLU()(self.fc1(x))
+        x = nn.Dropout(0.5)(x)
         x = self.fc2(x)
         x = self.out(x)
         return x
@@ -37,6 +38,7 @@ class Value(nn.Module):
     def forward(self, observation, action):
         x = torch.cat([observation, action], dim=1)
         x = nn.ReLU()(self.fc1(x))
+        x = nn.Dropout()(x)
         x = self.fc2(x)
 
         return x
